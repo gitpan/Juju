@@ -1,0 +1,11 @@
+Revision history for Juju
+
+0.5     2014-04-22
+
+0.4     2014-02-15
+	- Use MIT license
+	- Add more api calls
+
+0.3     2014-02-14
+	- Adding API calls
+	- Finished non-blocking code
