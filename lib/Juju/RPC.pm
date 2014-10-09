@@ -1,19 +1,14 @@
 package Juju::RPC;
 # ABSTRACT: RPC Class
-$Juju::RPC::VERSION = '0.5';
+$Juju::RPC::VERSION = '0.7';
 
+use strict;
+use warnings;
 use AnyEvent;
 use AnyEvent::WebSocket::Client;
-use JSON;
+use JSON::PP;
 
-use Moo;
-use namespace::clean;
-
-has 'conn' => (is => 'rw');
-
-has 'request_id' => (is => 'rw', default => 0);
-
-has 'is_connected' => (is => 'rw', default => 0);
+use Class::Tiny qw(conn request_id is_connected);
 
 sub create_connection {
     my $self = shift;
@@ -60,7 +55,7 @@ Juju::RPC - RPC Class
 
 =head1 VERSION
 
-version 0.5
+version 0.7
 
 =head1 DESCRIPTION
 

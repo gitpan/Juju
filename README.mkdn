@@ -1,76 +1,33 @@
-package Juju::Manual::Quickstart;
-$Juju::Manual::Quickstart::VERSION = '0.7';
-# ABSTRACT: Getting started with Juju
+# NAME
 
+Juju - Non-blocking Perl bindings for http://juju.ubuntu.com/
 
-1;
-
-__END__
-
-=pod
-
-=encoding UTF-8
-
-=head1 NAME
-
-Juju::Manual::Quickstart - Getting started with Juju
-
-=head1 VERSION
+# VERSION
 
 version 0.7
 
-=head1 INSTALL
+# DESCRIPTION
 
-Installation is handled through cpanm and you can point directly to
-the github repository:
+Pure perl non-blocking bindings for Juju. See [Juju::Manual::Quickstart](https://metacpan.org/pod/Juju::Manual::Quickstart) for more information.
 
-    cpanm git@github.com:battlemidget/perl-juju.git
+# NOTICE
 
-=head1 INTRO
+Code is **alpha quality** and subject to change. API breakage will occur
+until this project reaches 1.x version.
 
-The library exposes juju rpc interface via a secure
-websocket. The credentials required are found in your
-B<~/.juju/environments/'env'.jenv>. If that directory/file does not
-exist you'll want to make sure you've bootstrapped first:
-
-    juju bootstrap --upload-tools
-
-See more information on the workings of juju at
-L<http://juju.ubuntu.com>
-
-=head1 USING
-
-To get started initialize the Juju class:
-
-    use Juju;
-
-    # Open connection over the websocket protocol
-    my $juju = Juju->new(endpoint => 'wss://192.168.122.16:17070', password => '8fdsaf0fda');
-    $juju->login;
-    my $juju_info = $juju->info;
-    print $juju_info->{UUID};
-
-    # Close the connection
-    $juju->close;
-
-The password is found in the B<~/.juju/environments/'env'.jenv> under
-C<admin-secret>.
-
-There is a B<port (17070)> for accessing the machine resources.
-
-=head1 AUTHOR
+# AUTHOR
 
 Adam Stokes <adamjs@cpan.org>
 
-=head1 COPYRIGHT AND LICENSE
+# COPYRIGHT AND LICENSE
 
 This software is Copyright (c) 2014 by Adam Stokes.
 
 This is free software, licensed under:
 
-  The MIT (X11) License
+    The MIT (X11) License
 
-=head1 DISCLAIMER OF WARRANTY
+# DISCLAIMER OF WARRANTY
 
 BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
 FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT
@@ -92,5 +49,3 @@ RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
 FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF
 SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGES.
-
-=cut

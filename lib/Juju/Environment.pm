@@ -1,27 +1,35 @@
 package Juju::Environment;
+$Juju::Environment::VERSION = '0.7';
 # ABSTRACT: Exposed juju api environment
-$Juju::Environment::VERSION = '0.5';
-use Moo;
-extends 'Juju::RPC';
 
-has 'endpoint' => (is => 'ro', default => sub { 'wss://localhost:17070' });
 
-has 'username' => (is => 'ro', default => 'user-admin');
+use strict;
+use warnings;
+use parent 'Juju::RPC';
 
-has 'password' => (is => 'rw');
 
-has 'is_authenticated' => (is => 'rw', default => 0);
+use Class::Tiny qw(password is_authenticated), {
+    endpoint => sub {'wss://localhost:17070'},
+    username => sub {'user-admin'},
+    Jobs     => sub {
+        +{  HostUnits     => 'JobHostUnits',
+            ManageEnviron => 'JobManageEnviron',
+            ManageState   => 'JobManageSate'
+        };
+    }
+};
+
+
 
 sub _prepare_constraints {
     my ($self, $constraints) = @_;
     foreach my $key (keys %{$constraints}) {
-        if ($key =~ /cpu-cores|cpu-power|mem/) {
+        if ($key =~ /^(cpu-cores|cpu-power|mem|root-disk)/) {
             $constraints->{k} = int($constraints->{k});
         }
     }
     return $constraints;
 }
-
 
 
 sub login {
@@ -42,6 +50,17 @@ sub login {
     );
 }
 
+
+
+sub reconnect {
+    my $self = shift;
+    $self->close;
+    $self->create_connection;
+    $self->login;
+    $self->request_id = 1;
+}
+
+
 sub info {
     my $self = shift;
     $self->call(
@@ -53,6 +72,33 @@ sub info {
     );
 }
 
+
+
+sub status {
+    my $self = shift;
+    $self->call(
+        {   "Type"   => "Client",
+            "Requst" => "FullStatus"
+        }
+    );
+}
+
+
+
+sub get_watcher {
+    my $self = shift;
+    $self->call({"Type" => "Client", "Request" => "WatchAll"});
+}
+
+
+sub get_watched_tasks {
+    my ($self, $watcher_id) = @_;
+    $self->call(
+        {"Type" => "AllWatcher", "Request" => "Next", "Id" => $watcher_id});
+}
+
+
+
 sub add_charm {
     my ($self, $charm_url) = @_;
     $self->call(
@@ -62,6 +108,7 @@ sub add_charm {
         }
     );
 }
+
 
 sub get_charm {
     my ($self, $charm_url) = @_;
@@ -73,6 +120,7 @@ sub get_charm {
     );
 }
 
+
 sub get_env_constraints {
     my $self = shift;
     $self->call(
@@ -81,6 +129,7 @@ sub get_env_constraints {
         }
     );
 }
+
 
 sub set_env_constraints {
     my ($self, $constraints) = @_;
@@ -92,12 +141,16 @@ sub set_env_constraints {
     );
 }
 
+
 sub get_env_config {
-  my $self = shift;
-        $self->call({
-            "Type"=> "Client",
-            "Request"=> "EnvironmentGet"});
+    my $self = shift;
+    $self->call(
+        {   "Type"    => "Client",
+            "Request" => "EnvironmentGet"
+        }
+    );
 }
+
 
 sub set_env_config {
     my ($self, $config) = @_;
@@ -109,19 +162,21 @@ sub set_env_config {
     );
 }
 
+
 sub add_machine {
     my ($self, $series, $constraints, $machine_spec, $parent_id,
         $container_type)
       = @_;
     my $params = {
         "Series"        => $series,
-        "Constraints"   => $constraints,
+        "Constraints"   => $self->_prepare_constraints($constraints),
         "ContainerType" => $container_type,
         "ParentId"      => $parent_id,
-        "Jobs"          => "",                # TODO: add jobs
+        "Jobs"          => $self->Jobs->{HostUnits},
     };
-    return $self->add_machines([$params])->{Machines}->[0];
+    return $self->add_machines([$params]);
 }
+
 
 sub add_machines {
     my ($self, $machines) = @_;
@@ -134,6 +189,22 @@ sub add_machines {
 }
 
 
+sub destroy_machines {
+    my ($self, $machine_ids, $force) = @_;
+    my $params = {"MachineNames" => $machine_ids};
+    if ($force) {
+        $params->{Force} = 1;
+    }
+    return $self->call(
+        {   "Type"    => "Client",
+            "Request" => "DestroyMachines",
+            "Params"  => $params
+        }
+    );
+}
+
+
+
 sub add_relation {
     my ($self, $endpoint_a, $endpoint_b) = @_;
     $self->call(
@@ -143,6 +214,7 @@ sub add_relation {
         }
     );
 }
+
 
 sub remove_relation {
     my ($self, $endpoint_a, $endpoint_b) = @_;
@@ -154,29 +226,30 @@ sub remove_relation {
     );
 }
 
+
 sub deploy {
-    my ($self, $service_name, $charm_url, $num_units, $config, $constraints,
-        $machine_spec)
+    my ($self, $service_name, $charm_url, $num_units, $config_yaml,
+        $constraints, $machine_spec)
       = @_;
+    my $params = {ServiceName => $service_name};
     $num_units = 1 unless $num_units;
+    $params->{NumUnits}   = $num_units;
+    $params->{ConfigYAML} = $config_yaml;
     my $svc_constraints;
     if ($constraints) {
-        $svc_constraints = $self->_prepare_constraints($constraints);
+        $params->{Constraints} = $self->_prepare_constraints($constraints);
+    }
+    if ($machine_spec) {
+        $params->{ToMachineSpec} = $machine_spec;
     }
     $self->call(
         {   "Type"    => "Client",
             "Request" => "ServiceDeploy",
-            "Params"  => {
-                "ServiceName"   => $service_name,
-                "CharmURL"      => $charm_url,
-                "NumUnits"      => $num_units,
-                "Config"        => $config,
-                "Constraints"   => $svc_constraints,
-                "ToMachineSpec" => $machine_spec
-            }
+            "Params"  => $params
         }
     );
 }
+
 
 sub set_config {
     my ($self, $service_name, $config) = @_;
@@ -192,6 +265,7 @@ sub set_config {
     );
 }
 
+
 sub unset_config {
     my ($self, $service_name, $config_keys) = @_;
     return $self->call(
@@ -204,6 +278,7 @@ sub unset_config {
         }
     );
 }
+
 
 sub set_charm {
     my ($self, $service_name, $charm_url, $force) = @_;
@@ -220,6 +295,7 @@ sub set_charm {
     );
 }
 
+
 sub get_service {
     my ($self, $service_name) = @_;
     $self->call(
@@ -231,11 +307,13 @@ sub get_service {
     );
 }
 
+
 sub get_config {
     my ($self, $service_name) = @_;
     my $svc = $self->get_service($service_name);
     return $svc->{Config};
 }
+
 
 sub get_constraints {
     my ($self, $service_name) = @_;
@@ -251,6 +329,7 @@ sub get_constraints {
     );
 }
 
+
 sub set_constraints {
     my ($self, $service_name, $constraints) = @_;
     $self->call(
@@ -264,6 +343,7 @@ sub set_constraints {
         sub { my $res = shift; return $res }
     );
 }
+
 
 sub update_service {
     my ($self, $service_name, $charm_url, $force_charm_url,
@@ -285,6 +365,7 @@ sub update_service {
     );
 }
 
+
 sub destroy_service {
     my ($self, $service_name) = @_;
     $self->call(
@@ -296,6 +377,7 @@ sub destroy_service {
     );
 }
 
+
 sub expose {
     my ($self, $service_name) = @_;
     $self->call(
@@ -305,6 +387,7 @@ sub expose {
         }
     );
 }
+
 
 sub unexpose {
     my ($self, $service_name) = @_;
@@ -317,6 +400,7 @@ sub unexpose {
     );
 }
 
+
 sub valid_relation_names {
     my ($self, $service_name) = @_;
     $self->call(
@@ -327,6 +411,7 @@ sub valid_relation_names {
         sub { my $res = shift; return $res }
     );
 }
+
 
 sub add_units {
     my ($self, $service_name, $num_units) = @_;
@@ -345,6 +430,7 @@ sub add_units {
         }
     );
 }
+
 
 sub add_unit {
     my ($self, $service_name, $machine_spec) = @_;
@@ -367,7 +453,8 @@ sub add_unit {
 }
 
 
-sub remove_units {
+
+sub remove_unit {
     my ($self, $unit_names) = @_;
     $self->call(
         {   "Type"    => "Client",
@@ -377,6 +464,7 @@ sub remove_units {
         sub { my $res = shift; return $res }
     );
 }
+
 
 sub resolved {
     my ($self, $unit_name, $retry) = @_;
@@ -394,6 +482,7 @@ sub resolved {
 }
 
 
+
 sub get_public_address {
     my ($self, $target) = @_;
     $self->call(
@@ -404,6 +493,7 @@ sub get_public_address {
         sub { my $res = shift; return $res; }
     );
 }
+
 
 sub set_annotation {
     my ($self, $entity, $entity_type, $annotation) = @_;
@@ -418,6 +508,7 @@ sub set_annotation {
         sub { my $res = shift; return $res }
     );
 }
+
 
 sub get_annotation {
     my ($self, $entity, $entity_type) = @_;
@@ -445,7 +536,13 @@ Juju::Environment - Exposed juju api environment
 
 =head1 VERSION
 
-version 0.5
+version 0.7
+
+=head1 SYNOPSIS
+
+  use Juju;
+
+  my $juju = Juju->new(endpoint => 'wss://localhost:17070', password => 's3cr3t');
 
 =head1 ATTRIBUTES
 
@@ -480,11 +577,27 @@ B<Returns> - an updated constraint hash with any integers set properly.
 
 Login to juju
 
+=head2 reconnect
+
+Reconnects to API server in case of timeout
+
 =head2 info
 
 Environment information
 
 B<Returns> - Juju environment state
+
+=head2 status
+
+Returns juju environment status
+
+=head2 get_watcher
+
+Returns watcher
+
+=head2 get_watched_tasks ($watcher_id)
+
+List of all watches for Id
 
 =head2 add_charm ($charm_url)
 
@@ -543,6 +656,8 @@ C<machines> - List of machines
 
 =head2 destroy_machines
 
+Destroy machines
+
 =head2 provisioning_script
 
 =head2 machine_config
@@ -555,7 +670,7 @@ Sets a relation between units
 
 Removes relation between endpoints
 
-=head2 deploy ($service_name, $charm_url, $num_units, $config, $constraints, $machine_spec)
+=head2 deploy ($service_name, $charm_url, $num_units, $config_yaml, $constraints, $machine_spec)
 
 Deploys a charm to service
 
@@ -639,7 +754,7 @@ All possible relation names of a service
 
 =head2 add_unit
 
-=head2 remove_units
+=head2 remove_unit
 
 =head2 resolved
 
