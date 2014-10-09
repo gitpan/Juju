@@ -1,5 +1,5 @@
 package Juju::Environment;
-$Juju::Environment::VERSION = '0.7';
+$Juju::Environment::VERSION = '0.8';
 # ABSTRACT: Exposed juju api environment
 
 
@@ -536,7 +536,7 @@ Juju::Environment - Exposed juju api environment
 
 =head1 VERSION
 
-version 0.7
+version 0.8
 
 =head1 SYNOPSIS
 
