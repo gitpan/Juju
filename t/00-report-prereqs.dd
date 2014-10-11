@@ -27,7 +27,6 @@ do { my $x = {
                                      'CPAN::Meta' => '2.120900'
                                    },
                    'requires' => {
-                                   'DDP' => '0',
                                    'ExtUtils::MakeMaker' => '0',
                                    'File::Spec' => '0',
                                    'IO::Handle' => '0',
@@ -35,6 +34,7 @@ do { my $x = {
                                    'IPC::Open3' => '0',
                                    'Pod::Elemental::Transformer::List' => '0',
                                    'Pod::Weaver::Plugin::Encoding' => '0',
+                                   'Pod::Weaver::Section::SeeAlso' => '0',
                                    'Test::Compile' => '0',
                                    'Test::Exception' => '0',
                                    'Test::Kwalitee' => '0',

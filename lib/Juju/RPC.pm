@@ -1,6 +1,6 @@
 package Juju::RPC;
 # ABSTRACT: RPC Class
-$Juju::RPC::VERSION = '1.1';
+$Juju::RPC::VERSION = '1.2';
 
 use strict;
 use warnings;
@@ -8,17 +8,30 @@ use AnyEvent;
 use AnyEvent::WebSocket::Client;
 use JSON::PP;
 
-use Class::Tiny qw(conn is_connected), {request_id => 1};
+use Class::Tiny qw(conn result is_connected done), {
+    request_id => 1,
+};
 
-sub create_connection {
+
+sub BUILD {
     my $self = shift;
-    die "Already Connected."
-      if $self->is_connected and $self->is_authenticated;
     my $client = AnyEvent::WebSocket::Client->new(ssl_no_verify => 1);
-    $self->is_connected(1);
     $self->conn($client->connect($self->endpoint)->recv);
-}
+    $self->is_connected(1);
 
+    $self->conn->on(
+        each_message => sub {
+            my ($conn, $message) = @_;
+            my $body = decode_json($message->decoded_body);
+            if (defined($body->{Response})) {
+                $self->done->send($body->{Response});
+            }
+            else {
+                die 'Error: ' . $message->decoded_body;
+            }
+        }
+    );
+}
 
 sub close {
     my $self = shift;
@@ -27,23 +40,19 @@ sub close {
 
 sub call {
     my ($self, $params, $cb) = @_;
-    my $done = AnyEvent->condvar;
+
+    $self->done(AnyEvent->condvar);
 
     # Increment request id
     $self->request_id($self->request_id + 1);
     $params->{RequestId} = $self->request_id;
     $self->conn->send(encode_json($params));
-    $self->conn->on(
-        each_message => sub {
-            $done->send(decode_json(pop->decoded_body)->{Response});
-        }
-    );
 
     # non-blocking
-    return $cb->($done->recv) if $cb;
+    return $cb->($self->done->recv) if $cb;
 
     # blocking
-    return $done->recv;
+    return $self->done->recv;
 }
 
 1;
@@ -60,7 +69,7 @@ Juju::RPC - RPC Class
 
 =head1 VERSION
 
-version 1.1
+version 1.2
 
 =head1 DESCRIPTION
 
@@ -83,31 +92,13 @@ Check if a websocket connection exists
 
 =head1 METHODS
 
-=head2 creation_connection
-
-Initiate a websocket connection and stores itself in C<conn> attribute.
-
-=head3 Returns
-
-Websocket connection
-
 =head2 close
 
 Close connection
 
-=head2 call
+=head2 call ($params, $cb)
 
 Sends event to juju api server
-
-=head3 Takes
-
-C<params> - Hash of parameters needed to query Juju API
-
-C<cb> - (optional) callback routine
-
-=head3 Returns
-
-Result of RPC Response
 
 =head1 AUTHOR
 
@@ -120,6 +111,18 @@ This software is Copyright (c) 2014 by Adam Stokes.
 This is free software, licensed under:
 
   The MIT (X11) License
+
+=head1 SEE ALSO
+
+Please see those modules/websites for more information related to this module.
+
+=over 4
+
+=item *
+
+L<Juju|Juju>
+
+=back
 
 =head1 DISCLAIMER OF WARRANTY
 

@@ -9,7 +9,6 @@ requires "strict" => "0";
 requires "warnings" => "0";
 
 on 'test' => sub {
-  requires "DDP" => "0";
   requires "ExtUtils::MakeMaker" => "0";
   requires "File::Spec" => "0";
   requires "IO::Handle" => "0";
@@ -17,6 +16,7 @@ on 'test' => sub {
   requires "IPC::Open3" => "0";
   requires "Pod::Elemental::Transformer::List" => "0";
   requires "Pod::Weaver::Plugin::Encoding" => "0";
+  requires "Pod::Weaver::Section::SeeAlso" => "0";
   requires "Test::Compile" => "0";
   requires "Test::Exception" => "0";
   requires "Test::Kwalitee" => "0";

@@ -1,5 +1,5 @@
 package Juju::Environment;
-$Juju::Environment::VERSION = '1.1';
+$Juju::Environment::VERSION = '1.2';
 # ABSTRACT: Exposed juju api environment
 
 
@@ -54,20 +54,21 @@ sub _prepare_constraints {
 
 sub login {
     my $self = shift;
-    $self->create_connection unless $self->is_connected;
-    $self->call(
-        {   "Type"      => "Admin",
-            "Request"   => "Login",
-            "RequestId" => $self->request_id,
-            "Params"    => {
-                "AuthTag"  => $self->username,
-                "Password" => $self->password
-            }
-        },
-        sub {
-            $self->is_authenticated(1);
+    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
+
+    my $params = {
+        "Type"      => "Admin",
+        "Request"   => "Login",
+        "RequestId" => $self->request_id,
+        "Params"    => {
+            "AuthTag"  => $self->username,
+            "Password" => $self->password
         }
-    );
+    };
+
+    # block
+    my $res = $self->call($params);
+    $self->is_authenticated(1) unless !defined($res->{EnvironTag});
 }
 
 
@@ -75,7 +76,6 @@ sub login {
 sub reconnect {
     my $self = shift;
     $self->close;
-    $self->create_connection;
     $self->login;
     $self->request_id = 1;
 }
@@ -879,7 +879,7 @@ Juju::Environment - Exposed juju api environment
 
 =head1 VERSION
 
-version 1.1
+version 1.2
 
 =head1 SYNOPSIS
 
@@ -1198,6 +1198,18 @@ This software is Copyright (c) 2014 by Adam Stokes.
 This is free software, licensed under:
 
   The MIT (X11) License
+
+=head1 SEE ALSO
+
+Please see those modules/websites for more information related to this module.
+
+=over 4
+
+=item *
+
+L<Juju|Juju>
+
+=back
 
 =head1 DISCLAIMER OF WARRANTY
 

@@ -1,5 +1,5 @@
 package Juju::Manual::Quickstart;
-$Juju::Manual::Quickstart::VERSION = '1.1';
+$Juju::Manual::Quickstart::VERSION = '1.2';
 # ABSTRACT: Getting started with Juju
 
 
@@ -17,14 +17,18 @@ Juju::Manual::Quickstart - Getting started with Juju
 
 =head1 VERSION
 
-version 1.1
+version 1.2
 
 =head1 INSTALL
 
 Installation is handled through cpanm and you can point directly to
 the github repository:
 
-    cpanm git@github.com:battlemidget/perl-juju.git
+    cpanm git@github.com:battlemidget/p5-juju.git
+
+Or install from cpan
+
+    cpanm Juju
 
 =head1 INTRO
 
@@ -45,18 +49,26 @@ To get started initialize the Juju class:
     use Juju;
 
     # Open connection over the websocket protocol
-    my $juju = Juju->new(endpoint => 'wss://192.168.122.16:17070', password => '8fdsaf0fda');
+    my $juju = Juju->new(endpoint => 'wss://192.168.122.16:17070',
+                         password => '8fdsaf0fda');
     $juju->login;
-    my $juju_info = $juju->info;
-    print $juju_info->{UUID};
+    $juju->status(
+      sub {
+        my $status = shift;
+        print $status->{UUID};
+      }
+    );
 
     # Close the connection
     $juju->close;
 
 The password is found in the B<~/.juju/environments/'env'.jenv> under
-C<admin-secret>.
+C<password>.
 
-There is a B<port (17070)> for accessing the machine resources.
+There is a B<port (17070)> for accessing the machine resources. To see what state
+servers are available to you run:
+
+    $ juju api-endpoints
 
 =head1 AUTHOR
 
@@ -69,6 +81,18 @@ This software is Copyright (c) 2014 by Adam Stokes.
 This is free software, licensed under:
 
   The MIT (X11) License
+
+=head1 SEE ALSO
+
+Please see those modules/websites for more information related to this module.
+
+=over 4
+
+=item *
+
+L<Juju|Juju>
+
+=back
 
 =head1 DISCLAIMER OF WARRANTY
 

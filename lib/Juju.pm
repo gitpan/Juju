@@ -1,6 +1,6 @@
 package Juju;
-$Juju::VERSION = '1.1';
-# ABSTRACT: Non-blocking Perl bindings for https://juju.ubuntu.com/
+$Juju::VERSION = '1.2';
+# ABSTRACT: Pure Perl bindings for Juju
 
 
 use strict;
@@ -18,11 +18,11 @@ __END__
 
 =head1 NAME
 
-Juju - Non-blocking Perl bindings for https://juju.ubuntu.com/
+Juju - Pure Perl bindings for Juju
 
 =head1 VERSION
 
-version 1.1
+version 1.2
 
 =head1 DESCRIPTION
 
@@ -40,6 +40,18 @@ This software is Copyright (c) 2014 by Adam Stokes.
 This is free software, licensed under:
 
   The MIT (X11) License
+
+=head1 SEE ALSO
+
+Please see those modules/websites for more information related to this module.
+
+=over 4
+
+=item *
+
+L<https://juju.ubuntu.com|https://juju.ubuntu.com>
+
+=back
 
 =head1 DISCLAIMER OF WARRANTY
 
