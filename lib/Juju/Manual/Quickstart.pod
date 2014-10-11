@@ -1,5 +1,5 @@
 package Juju::Manual::Quickstart;
-$Juju::Manual::Quickstart::VERSION = '0.9';
+$Juju::Manual::Quickstart::VERSION = '1.0';
 # ABSTRACT: Getting started with Juju
 
 
@@ -17,7 +17,7 @@ Juju::Manual::Quickstart - Getting started with Juju
 
 =head1 VERSION
 
-version 0.9
+version 1.0
 
 =head1 INSTALL
 

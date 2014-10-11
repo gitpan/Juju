@@ -1,6 +1,6 @@
 package Juju::RPC;
 # ABSTRACT: RPC Class
-$Juju::RPC::VERSION = '0.9';
+$Juju::RPC::VERSION = '1.0';
 
 use strict;
 use warnings;
@@ -8,7 +8,7 @@ use AnyEvent;
 use AnyEvent::WebSocket::Client;
 use JSON::PP;
 
-use Class::Tiny qw(conn request_id is_connected);
+use Class::Tiny qw(conn is_connected), {request_id => 1};
 
 sub create_connection {
     my $self = shift;
@@ -38,12 +38,12 @@ sub call {
             $done->send(decode_json(pop->decoded_body)->{Response});
         }
     );
-    if (ref($cb) eq "CODE") {
-        $cb->($done->recv);
-    }
-    else {
-        return $done->recv;
-    }
+
+    # non-blocking
+    return $cb->($done->recv) if $cb;
+
+    # blocking
+    return $done->recv;
 }
 
 1;
@@ -60,7 +60,7 @@ Juju::RPC - RPC Class
 
 =head1 VERSION
 
-version 0.9
+version 1.0
 
 =head1 DESCRIPTION
 

@@ -17,6 +17,8 @@ lib/Juju/RPC.pm
 t/00-compile.t
 t/00-report-prereqs.dd
 t/00-report-prereqs.t
+t/01-auth.t
+t/02-environment.t
 t/release-kwalitee.t
 t/release-minimum-version.t
 weaver.ini

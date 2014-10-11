@@ -1,10 +1,13 @@
 package Juju::Environment;
-$Juju::Environment::VERSION = '0.9';
+$Juju::Environment::VERSION = '1.0';
 # ABSTRACT: Exposed juju api environment
 
 
 use strict;
 use warnings;
+use HTTP::Tiny;
+use JSON::PP;
+use Devel::Deprecate 'deprecate';
 use parent 'Juju::RPC';
 
 
@@ -18,6 +21,23 @@ use Class::Tiny qw(password is_authenticated), {
         };
     }
 };
+
+
+
+sub query_cs {
+    my ($self,   $charm)  = @_;
+    my ($series, $_charm) = $charm =~ /^(precise|trusty)\/(\w+)/i;
+    my $cs_url = 'https://manage.jujucharms.com/api/3/charm';
+    if (!$series) {
+        $series = 'trusty';
+        $_charm = $charm;
+    }
+
+    my $composed_url = sprintf("%s/%s/%s", $cs_url, $series, $_charm);
+    my $res = HTTP::Tiny->new->get($composed_url);
+    die "Unable to query charm store\n" unless $res->{success};
+    return decode_json($res->{content});
+}
 
 
 
@@ -38,7 +58,7 @@ sub login {
     $self->call(
         {   "Type"      => "Admin",
             "Request"   => "Login",
-            "RequestId" => 10001,
+            "RequestId" => $self->request_id,
             "Params"    => {
                 "AuthTag"  => $self->username,
                 "Password" => $self->password
@@ -63,97 +83,175 @@ sub reconnect {
 
 sub info {
     my $self = shift;
-    $self->call({"Type" => "Client", "Request" => "EnvironmentInfo"});
+    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
+    my $params = {"Type" => "Client", "Request" => "EnvironmentInfo"};
+
+    deprecate(
+              reason => 'Please use environment_info() for getting environment',
+              die => '2014-12-01'
+             );
+
+    return $self->environment_info unless $cb;
+    return $self->environment_info($cb);
+}
+
+
+sub environment_info {
+    my $self = shift;
+    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
+    my $params = {"Type" => "Client", "Request" => "EnvironmentInfo"};
+
+    # block
+    return $self->call($params) unless $cb;
+
+    # non-block
+    return $self->call($params, $cb);
 }
 
 
 
 sub status {
-    my $self = shift;
-    $self->call(
-        {   "Type"   => "Client",
-            "Requst" => "FullStatus"
-        }
-    );
+    my $self   = shift;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+    my $params = {
+        "Type"   => "Client",
+        "Request" => "FullStatus"
+    };
+
+    # block
+    return $self->call($params) unless $cb;
+
+    # non-block
+    return $self->call($params, $cb);
 }
 
 
 
 sub get_watcher {
     my $self = shift;
-    $self->call({"Type" => "Client", "Request" => "WatchAll"});
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+    my $params = {"Type" => "Client", "Request" => "WatchAll"};
+
+    # block
+    return $self->call($params) unless $cb;
+
+    # non-block
+    return $self->call($params, $cb);
 }
 
 
 sub get_watched_tasks {
     my ($self, $watcher_id) = @_;
-    $self->call(
-        {"Type" => "AllWatcher", "Request" => "Next", "Id" => $watcher_id});
+    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
+    die "Unable to run synchronously, provide a callback" unless $cb;
+
+    my $params =
+      {"Type" => "AllWatcher", "Request" => "Next", "Id" => $watcher_id};
+
+    # non-block
+    return $self->call($params, $cb);
 }
 
 
 
 sub add_charm {
     my ($self, $charm_url) = @_;
-    $self->call(
-        {   "Type"    => "Client",
-            "Request" => "AddCharm",
-            "Params"  => {"URL" => $charm_url}
-        }
-    );
+    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
+    my $params = {
+        "Type"    => "Client",
+        "Request" => "AddCharm",
+        "Params"  => {"URL" => $charm_url}
+    };
+
+    # block
+    return $self->call($params) unless $cb;
+
+    # non-block
+    return $self->call($params, $cb);
 }
 
 
 sub get_charm {
     my ($self, $charm_url) = @_;
-    $self->call(
-        {   "Type"    => "Client",
-            "Request" => "CharmInfo",
-            "Params"  => {"CharmURL" => $charm_url}
-        }
-    );
+    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
+    my $params = {
+        "Type"    => "Client",
+        "Request" => "CharmInfo",
+        "Params"  => {"CharmURL" => $charm_url}
+    };
+
+    # block
+    return $self->call($params) unless $cb;
+
+    # non-block
+    return $self->call($params, $cb);
 }
 
 
 sub get_env_constraints {
-    my $self = shift;
-    $self->call(
-        {   "Type"    => "Client",
-            "Request" => "GetEnvironmentConstraints"
-        }
-    );
+    my $self   = shift;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+    my $params = {
+        "Type"    => "Client",
+        "Request" => "GetEnvironmentConstraints"
+    };
+
+    # block
+    return $self->call($params) unless $cb;
+
+    # non-block
+    return $self->call($params, $cb);
+
 }
 
 
 sub set_env_constraints {
     my ($self, $constraints) = @_;
-    $self->call(
-        {   "Type"    => "Client",
-            "Request" => "SetEnvironmentConstraints",
-            "Params"  => $constraints
-        }
-    );
+    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
+    my $params = {
+        "Type"    => "Client",
+        "Request" => "SetEnvironmentConstraints",
+        "Params"  => $constraints
+    };
+
+    # block
+    return $self->call($params) unless $cb;
+
+    # non-block
+    return $self->call($params, $cb);
 }
 
 
 sub get_env_config {
-    my $self = shift;
-    $self->call(
-        {   "Type"    => "Client",
-            "Request" => "EnvironmentGet"
-        }
-    );
+    my $self   = shift;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+    my $params = {
+        "Type"    => "Client",
+        "Request" => "EnvironmentGet"
+    };
+
+    # block
+    return $self->call($params) unless $cb;
+
+    # non-block
+    return $self->call($params, $cb);
 }
 
 
 sub set_env_config {
     my ($self, $config) = @_;
-    $self->call(
-        {   "Type"    => "Client",
-            "Request" => "EnvironmentSet",
-            "Params"  => {"Config" => $config}
-        }
-    );
+    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
+    my $params = {
+        "Type"    => "Client",
+        "Request" => "EnvironmentSet",
+        "Params"  => {"Config" => $config}
+    };
+
+    # block
+    return $self->call($params) unless $cb;
+
+    # non-block
+    return $self->call($params, $cb);
 }
 
 
@@ -161,6 +259,8 @@ sub add_machine {
     my ($self, $series, $constraints, $machine_spec, $parent_id,
         $container_type)
       = @_;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+
     my $params = {
         "Series"        => $series,
         "Constraints"   => $self->_prepare_constraints($constraints),
@@ -168,56 +268,83 @@ sub add_machine {
         "ParentId"      => $parent_id,
         "Jobs"          => $self->Jobs->{HostUnits},
     };
-    return $self->add_machines([$params]);
+
+    return $self->add_machines([$params]) unless $cb;
+    return $self->add_machines([$params], $cb);
 }
 
 
 sub add_machines {
     my ($self, $machines) = @_;
-    $self->call(
-        {   "Type"    => "Client",
-            "Request" => "AddMachines",
-            "Params"  => {"MachineParams" => $machines}
-        }
-    );
+    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
+    my $params = {
+        "Type"    => "Client",
+        "Request" => "AddMachines",
+        "Params"  => {"MachineParams" => $machines}
+    };
+
+    # block
+    return $self->call($params) unless $cb;
+
+    # non-block
+    return $self->call($params, $cb);
 }
 
 
 sub destroy_machines {
     my ($self, $machine_ids, $force) = @_;
-    my $params = {"MachineNames" => $machine_ids};
-    if ($force) {
-        $params->{Force} = 1;
-    }
-    return $self->call(
-        {   "Type"    => "Client",
-            "Request" => "DestroyMachines",
-            "Params"  => $params
-        }
-    );
-}
+    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
 
+    my $params = {
+        "Type"    => "Client",
+        "Request" => "DestroyMachines",
+        "Params"  => {"MachineNames" => $machine_ids}
+    };
+
+    if ($force) {
+        $params->{Params}->{Force} = 1;
+    }
+
+    # block
+    return $self->call($params) unless $cb;
+
+    # non-block
+    return $self->call($params, $cb);
+
+}
 
 
 sub add_relation {
     my ($self, $endpoint_a, $endpoint_b) = @_;
-    $self->call(
-        {   'Type'    => 'Client',
-            'Request' => 'AddRelation',
-            'Params'  => {'Endpoints' => [$endpoint_a, $endpoint_b]}
-        }
-    );
+    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
+    my $params = {
+        'Type'    => 'Client',
+        'Request' => 'AddRelation',
+        'Params'  => {'Endpoints' => [$endpoint_a, $endpoint_b]}
+    };
+
+    # block
+    return $self->call($params) unless $cb;
+
+    # non-block
+    return $self->call($params, $cb);
 }
 
 
 sub remove_relation {
     my ($self, $endpoint_a, $endpoint_b) = @_;
-    $self->call(
-        {   'Type'    => 'Client',
-            'Request' => 'DestroyRelation',
-            'Params'  => {'Endpoints' => [$endpoint_a, $endpoint_b]}
-        }
-    );
+    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
+    my $params = {
+        'Type'    => 'Client',
+        'Request' => 'DestroyRelation',
+        'Params'  => {'Endpoints' => [$endpoint_a, $endpoint_b]}
+    };
+
+    # block
+    return $self->call($params) unless $cb;
+
+    # non-block
+    return $self->call($params, $cb);
 }
 
 
@@ -225,6 +352,8 @@ sub deploy {
     my ($self, $service_name, $charm_url, $num_units, $config_yaml,
         $constraints, $machine_spec)
       = @_;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+
     my $params = {ServiceName => $service_name};
     $num_units = 1 unless $num_units;
     $params->{NumUnits}   = $num_units;
@@ -247,6 +376,8 @@ sub deploy {
 
 sub set_config {
     my ($self, $service_name, $config) = @_;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+
     die "Not a hash" unless ref $config eq 'HASH';
     return $self->call(
         {   "Type"    => "Client",
@@ -262,6 +393,8 @@ sub set_config {
 
 sub unset_config {
     my ($self, $service_name, $config_keys) = @_;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+
     return $self->call(
         {   "Type"    => "Client",
             "Request" => "ServiceUnset",
@@ -276,6 +409,8 @@ sub unset_config {
 
 sub set_charm {
     my ($self, $service_name, $charm_url, $force) = @_;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+
     $force = 0 unless $force;
     $self->call(
         {   "Type"    => "Client",
@@ -292,6 +427,8 @@ sub set_charm {
 
 sub get_service {
     my ($self, $service_name) = @_;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+
     $self->call(
         {   "Type"    => "Client",
             "Request" => "ServiceGet",
@@ -304,6 +441,8 @@ sub get_service {
 
 sub get_config {
     my ($self, $service_name) = @_;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+
     my $svc = $self->get_service($service_name);
     return $svc->{Config};
 }
@@ -311,6 +450,8 @@ sub get_config {
 
 sub get_constraints {
     my ($self, $service_name) = @_;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+
     $self->call(
         {   "Type"    => "Client",
             "Request" => "GetServiceConstraints",
@@ -326,6 +467,8 @@ sub get_constraints {
 
 sub set_constraints {
     my ($self, $service_name, $constraints) = @_;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+
     $self->call(
         {   "Type"    => "Client",
             "Request" => "SetServiceConstraints",
@@ -343,6 +486,7 @@ sub update_service {
     my ($self, $service_name, $charm_url, $force_charm_url,
         $min_units, $settings, $constraints)
       = @_;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
 
     $self->call(
         {   "Type"    => "Client",
@@ -362,6 +506,8 @@ sub update_service {
 
 sub destroy_service {
     my ($self, $service_name) = @_;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+
     $self->call(
         {   "Type"    => "Client",
             "Request" => "ServiceDestroy",
@@ -374,6 +520,8 @@ sub destroy_service {
 
 sub expose {
     my ($self, $service_name) = @_;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+
     $self->call(
         {   "Type"    => "Client",
             "Request" => "ServiceExpose",
@@ -385,6 +533,8 @@ sub expose {
 
 sub unexpose {
     my ($self, $service_name) = @_;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+
     $self->call(
         {   "Type"    => "Client",
             "Request" => "ServiceUnexpose",
@@ -397,6 +547,8 @@ sub unexpose {
 
 sub valid_relation_names {
     my ($self, $service_name) = @_;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+
     $self->call(
         {   "Type"    => "Client",
             "Request" => "ServiceCharmRelations",
@@ -409,6 +561,8 @@ sub valid_relation_names {
 
 sub add_units {
     my ($self, $service_name, $num_units) = @_;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+
     $num_units = 1 unless $num_units;
     $self->call(
         {   "Type"    => "Client",
@@ -428,6 +582,8 @@ sub add_units {
 
 sub add_unit {
     my ($self, $service_name, $machine_spec) = @_;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+
     $machine_spec = 0 unless $machine_spec;
     my $params = {
         "ServiceName" => $service_name,
@@ -450,6 +606,8 @@ sub add_unit {
 
 sub remove_unit {
     my ($self, $unit_names) = @_;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+
     $self->call(
         {   "Type"    => "Client",
             "Request" => "DestroyServiceUnits",
@@ -462,6 +620,8 @@ sub remove_unit {
 
 sub resolved {
     my ($self, $unit_name, $retry) = @_;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+
     $retry = 0 unless $retry;
     $self->call(
         {   "Type"    => "Client",
@@ -479,6 +639,8 @@ sub resolved {
 
 sub get_public_address {
     my ($self, $target) = @_;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+
     $self->call(
         {   "Type"    => "Client",
             "Request" => "PublicAddress",
@@ -491,6 +653,8 @@ sub get_public_address {
 
 sub set_annotation {
     my ($self, $entity, $entity_type, $annotation) = @_;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+
     $self->call(
         {   "Type"    => "Client",
             "Request" => "SetAnnotations",
@@ -506,6 +670,8 @@ sub set_annotation {
 
 sub get_annotation {
     my ($self, $entity, $entity_type) = @_;
+    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+
     $self->call(
         {   "Type"    => "Client",
             "Request" => "GetAnnotations",
@@ -530,7 +696,7 @@ Juju::Environment - Exposed juju api environment
 
 =head1 VERSION
 
-version 0.9
+version 1.0
 
 =head1 SYNOPSIS
 
@@ -546,18 +712,29 @@ Websocket address
 
 =head2 username
 
-Juju admin user, this is a tag and should not need changing from the default.
+Juju admin user, this is a tag and should not need changing from the
+default.
+
+B<Note> This will be changing once multiple user support is released.
 
 =head2 password
 
-Password of juju administrator, found in your environments configuration 
-under 'admin-secret:'
+Password of juju administrator, found in your environments configuration
+under B<password>
 
 =head2 is_authenticated
 
 Stores if user has authenticated with juju api server
 
+=head2 Jobs
+
+Supported juju jobs
+
 =head1 METHODS
+
+=head2 query_cs ($charm)
+
+helper for querying charm store for charm details
 
 =head2 _prepare_constraints ($constraints)
 
@@ -577,9 +754,13 @@ Reconnects to API server in case of timeout
 
 =head2 info
 
-Environment information
+(Deprecated) Environment information
 
 B<Returns> - Juju environment state
+
+=head2 environment_info
+
+Return Juju Environment information
 
 =head2 status
 
@@ -644,17 +825,13 @@ Add multiple machines from iaas provider
 
 C<machines> - List of machines
 
-=head2 register_machine
-
-=head2 register_machines
-
 =head2 destroy_machines
 
 Destroy machines
 
 =head2 provisioning_script
 
-=head2 machine_config
+Not implemented
 
 =head2 add_relation ($endpoint_a, $endpoint_b)
 
