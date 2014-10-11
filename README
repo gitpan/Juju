@@ -1,9 +1,9 @@
 
 
 This archive contains the distribution Juju,
-version 1.0:
+version 1.1:
 
-  Non-blocking Perl bindings for http://juju.ubuntu.com/
+  Non-blocking Perl bindings for https://juju.ubuntu.com/
 
 This software is Copyright (c) 2014 by Adam Stokes.
 
