@@ -1,5 +1,5 @@
 package Juju;
-$Juju::VERSION = '0.8';
+$Juju::VERSION = '0.9';
 # ABSTRACT: Non-blocking Perl bindings for http://juju.ubuntu.com/
 
 
@@ -22,7 +22,7 @@ Juju - Non-blocking Perl bindings for http://juju.ubuntu.com/
 
 =head1 VERSION
 
-version 0.8
+version 0.9
 
 =head1 DESCRIPTION
 

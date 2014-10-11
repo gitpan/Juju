@@ -1,5 +1,5 @@
 package Juju::Environment;
-$Juju::Environment::VERSION = '0.8';
+$Juju::Environment::VERSION = '0.9';
 # ABSTRACT: Exposed juju api environment
 
 
@@ -63,13 +63,7 @@ sub reconnect {
 
 sub info {
     my $self = shift;
-    $self->call(
-        {"Type" => "Client", "Request" => "EnvironmentInfo"},
-        sub {
-            my $res = shift;
-            return $res;
-        }
-    );
+    $self->call({"Type" => "Client", "Request" => "EnvironmentInfo"});
 }
 
 
@@ -536,7 +530,7 @@ Juju::Environment - Exposed juju api environment
 
 =head1 VERSION
 
-version 0.8
+version 0.9
 
 =head1 SYNOPSIS
 

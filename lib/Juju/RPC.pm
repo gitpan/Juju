@@ -1,6 +1,6 @@
 package Juju::RPC;
 # ABSTRACT: RPC Class
-$Juju::RPC::VERSION = '0.8';
+$Juju::RPC::VERSION = '0.9';
 
 use strict;
 use warnings;
@@ -38,7 +38,12 @@ sub call {
             $done->send(decode_json(pop->decoded_body)->{Response});
         }
     );
-    $cb->($done->recv);
+    if (ref($cb) eq "CODE") {
+        $cb->($done->recv);
+    }
+    else {
+        return $done->recv;
+    }
 }
 
 1;
@@ -55,7 +60,7 @@ Juju::RPC - RPC Class
 
 =head1 VERSION
 
-version 0.8
+version 0.9
 
 =head1 DESCRIPTION
 
