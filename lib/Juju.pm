@@ -1,6 +1,6 @@
 package Juju;
-$Juju::VERSION = '1.4';
-# ABSTRACT: Pure Perl bindings for Juju
+$Juju::VERSION = '1.5';
+# ABSTRACT: Perl bindings for Juju
 
 
 use strict;
@@ -18,15 +18,15 @@ __END__
 
 =head1 NAME
 
-Juju - Pure Perl bindings for Juju
+Juju - Perl bindings for Juju
 
 =head1 VERSION
 
-version 1.4
+version 1.5
 
 =head1 DESCRIPTION
 
-Pure perl non-blocking bindings for Juju. See
+Perl non-blocking/blocking bindings for Juju. See
 L<Juju::Manual::Quickstart> for more information.
 
 =head1 AUTHOR

@@ -1,15 +1,15 @@
 package Juju::Environment;
-$Juju::Environment::VERSION = '1.4';
+$Juju::Environment::VERSION = '1.5';
 # ABSTRACT: Exposed juju api environment
 
 
 use strict;
 use warnings;
-use HTTP::Tiny;
 use JSON::PP;
 use YAML::Tiny qw(Dump);
 use Data::Validate::Type qw(:boolean_tests);
-use Carp;
+use Params::Validate qw(:all);
+use Juju::Util;
 use parent 'Juju::RPC';
 
 
@@ -21,25 +21,9 @@ use Class::Tiny qw(password is_authenticated), {
             ManageEnviron => 'JobManageEnviron',
             ManageState   => 'JobManageSate'
         };
-    }
+    },
+    util   => Juju::Util->new
 };
-
-
-
-sub query_cs {
-    my ($self,   $charm)  = @_;
-    my ($series, $_charm) = $charm =~ /^(precise|trusty)\/(\w+)/i;
-    my $cs_url = 'https://manage.jujucharms.com/api/3/charm';
-    if (!$series) {
-        $series = 'trusty';
-        $_charm = $charm;
-    }
-
-    my $composed_url = sprintf("%s/%s/%s", $cs_url, $series, $_charm);
-    my $res = HTTP::Tiny->new->get($composed_url);
-    die "Unable to query charm store\n" unless $res->{success};
-    return decode_json($res->{content});
-}
 
 
 
@@ -462,10 +446,10 @@ sub remove_relation {
 
 
 sub deploy {
-    my $self         = shift;
-    my $charm        = shift // die "Requires charm";
-    my $service_name = shift // die "Requires service name";
-    my $cb           = ref $_[-1] eq 'CODE' ? pop : undef;
+    my $self = shift;
+    my ($charm, $service_name) =
+      validate_pos(@_, {type => SCALAR}, {type => SCALAR});
+    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
 
     # parse additional arguments
     my ($num_units, $config_yaml, $constraints, $machine_spec) = @_;
@@ -475,7 +459,7 @@ sub deploy {
         Request => "ServiceDeploy",
         Params  => {ServiceName => $service_name}
     };
-    my $_charm_url = $self->query_cs($charm);
+    my $_charm_url = $self->util->query_cs($charm);
     $params->{Params}->{CharmUrl} = $_charm_url->{charm}->{url};
     $num_units = 1 unless $num_units;
     $params->{Params}->{NumUnits} = $num_units;
@@ -923,7 +907,7 @@ Juju::Environment - Exposed juju api environment
 
 =head1 VERSION
 
-version 1.4
+version 1.5
 
 =head1 SYNOPSIS
 
@@ -959,17 +943,21 @@ Supported juju jobs
 
 =head1 METHODS
 
-=head2 query_cs ($charm)
-
-helper for querying charm store for charm details
-
 =head2 _prepare_constraints ($constraints)
 
 Makes sure cpu-cores, cpu-power, mem are integers
 
-C<constraints> - hash of service constraints
+B<Params>
 
-B<Returns> - an updated constraint hash with any integers set properly.
+=over 4
+
+=item *
+
+C<constraints>
+
+hash of service constraints
+
+=back
 
 =head2 login
 
@@ -987,18 +975,53 @@ Return Juju Environment information
 
 Environment UUID from client connection
 
-=head2 environment_unset ($items)
+=head2 environment_unset
 
 Environment UUID from client connection
 
-=head2 find_tools ($major_version, $minor_version, $series, $arch)
+B<Params>
+
+=over 4
+
+=item *
+
+C<items>
+
+=back
+
+=head2 find_tools
 
 Returns list containing all tools matching specified parameters
 
-C<major_verison> - major version int
-C<minor_verison> - minor version int
-C<series> - Distribution series (eg, trusty)
-C<arch> - architecture
+B<Params>
+
+=over 4
+
+=item *
+
+C<major_verison>
+
+major version int
+
+=item *
+
+C<minor_verison>
+
+minor version int
+
+=item *
+
+C<series>
+
+Distribution series (eg, trusty)
+
+=item *
+
+C<arch>
+
+architecture
+
+=back
 
 =head2 agent_version
 
@@ -1020,59 +1043,145 @@ Returns network hostports for each api server
 
 Returns watcher
 
-=head2 get_watched_tasks ($watcher_id)
+=head2 get_watched_tasks
 
 List of all watches for Id
 
-=head2 add_charm ($charm_url)
+B<Params>
+
+=over 4
+
+C<watcher_id>
+
+=back
+
+=head2 add_charm
 
 Add charm
 
-C<charm_url> - url of charm
+B<Params>
 
-=head2 get_charm ($charm_url)
+=over 4
+
+=item *
+
+C<charm_url>
+
+url of charm
+
+=back
+
+=head2 get_charm
 
 Get charm
 
-C<charm_url> - url of charm
+B<Params>
+
+=over 4
+
+=item *
+
+C<charm_url>
+
+url of charm
+
+=back
 
 =head2 get_environment_constraints
 
 Get environment constraints
 
-=head2 set_environment_constraints ($constraints)
+=head2 set_environment_constraints
 
 Set environment constraints
 
-C<constraints> - environment constraints
+B<Params>
+
+=over 4
+
+=item *
+
+C<constraints>
+
+environment constraints
+
+=back
 
 =head2 environment_get
 
 Returns all environment settings
 
-=head2 environment_set ($config)
+=head2 environment_set
 
-C<config> - Config parameters
+Sets the given key-value pairs in the environment.
 
-=head2 add_machine ($series, $constraints, $machine_spec, $parent_id, $container_type)
+B<Params>
+
+=over 4
+
+=item *
+
+C<config>
+
+Config parameters
+
+=back
+
+=head2 add_machine
 
 Allocate new machine from the iaas provider (i.e. MAAS)
 
-C<series> - OS series (i.e precise)
+B<Params>
 
-C<constraints> - machine constraints
+=over 4
 
-C<machine_spec> - specific machine
+=item *
 
-C<parent_id> - id of parent
+C<series>
 
-C<container_type> - kvm or lxc container type
+OS series (i.e precise)
 
-=head2 add_machines ($machines)
+=item *
+
+C<constraints>
+
+machine constraints
+
+=item *
+
+C<machine_spec>
+
+specific machine
+
+=item *
+
+C<parent_id>
+
+id of parent
+
+=item *
+
+C<container_type>
+
+kvm or lxc container type
+
+=back
+
+=head2 add_machines
 
 Add multiple machines from iaas provider
 
-C<machines> - List of machines
+B<Params>
+
+=over 4
+
+=item *
+
+C<machines>
+
+List of machines
+
+=back
 
 =head2 destroy_environment
 
@@ -1082,122 +1191,437 @@ Destroys Juju environment
 
 Destroy machines
 
+B<Params>
+
+=over 4
+
+=item *
+
+C<machine_ids>
+
+List of machines
+
+=item *
+
+C<force>
+
+Force destroy
+
+=back
+
 =head2 provisioning_script
 
 Not implemented
 
-=head2 add_relation ($endpoint_a, $endpoint_b)
+=head2 add_relation
 
 Sets a relation between units
 
-=head2 remove_relation ($endpoint_a, $endpoint_b)
+B<Params>
+
+=over 4
+
+=item *
+
+C<endpoint_a>
+
+First unit endpoint
+
+=item *
+
+C<endpoint_b>
+
+Second unit endpoint
+
+=back
+
+=head2 remove_relation
 
 Removes relation between endpoints
 
-=head2 deploy ($charm, $service_name, $num_units, $config_yaml, $constraints, $machine_spec)
+B<Params>
+
+=over 4
+
+=item *
+
+C<endpoint_a>
+
+First unit endpoint
+
+=item *
+
+C<endpoint_b>
+
+Second unit endpoint
+
+=back
+
+=head2 deploy
 
 Deploys a charm to service
 
-=head2 service_set ($service_name, $config)
+B<Params>
+
+=over 4
+
+=item *
+
+C<charm>
+
+charm to deploy
+
+=item *
+
+C<service_name>
+
+name of service to set. can be same name as charm, however, recommended to pick something unique and identifiable.
+
+=item *
+
+C<num_units>
+
+(optional) number of service units
+
+=item *
+
+C<config_yaml>
+
+(optional) A YAML formatted string of charm options
+
+=item *
+
+C<constraints>
+
+(optional) Machine hardware constraints
+
+=item *
+
+C<machine_spec>
+
+(optional) Machine specification
+
+=back
+
+More information on deploying can be found by running C<juju help deploy>.
+
+=head2 service_set
 
 Set's configuration parameters for unit
 
-C<service_name> - name of service (ie. blog)
+B<Params>
 
-C<config> - hash of config parameters
+=over 4
 
-=head2 service_unset ($service_name, $config_keys)
+=item *
+
+C<service_name>
+
+name of service (ie. blog)
+
+=item *
+
+C<config>
+
+hash of config parameters
+
+=back
+
+=head2 service_unset
 
 Unsets configuration value for service to restore charm defaults
 
-C<service_name> - name of service
+B<Params>
 
-C<config_keys> - hash of config keys to unset
+=over 4
 
-=head2 service_set_charm ($service_name, $charm_url, $force)
+=item *
+
+C<service_name>
+
+name of service
+
+=item *
+
+C<config_keys>
+
+config items to unset
+
+=back
+
+=head2 service_set_charm
 
 Sets charm url for service
 
-C<service_name> - name of service
+B<Params>
 
-C<charm_url> - charm location (ie. cs:precise/wordpress)
+=over 4
 
-=head2 service_get ($service_name)
+=item *
+
+C<service_name>
+
+name of service
+
+=item *
+
+C<charm_url> 
+
+charm location (ie. cs:precise/wordpress)
+
+=item *
+
+C<force>
+
+(optional) for setting charm url, overrides any existing charm url already set.
+
+=back
+
+=head2 service_get
 
 Returns information on charm, config, constraints, service keys.
 
+B<Params>
+
+=over 4
+
+=item *
+
 C<service_name> - name of service
 
-B<Returns> - Hash of information on service
+=back
 
-=head2 get_config ($service_name)
+=head2 get_config
 
 Get service configuration
 
-C<service_name> - name of service
+B<Params>
 
-B<Returns> - Hash of service configuration
+=over 4
 
-=head2 get_service_constraints ($service_name)
+=item *
+
+C<service_name>
+
+name of service
+
+=back
+
+=head2 get_service_constraints
 
 Returns the constraints for the given service.
 
-C<service_name> - Name of service
+B<Params>
 
-=head2 set_service_constraints ($service_name, $constraints)
+=over 4
 
-C<service_name> - Name of service
+=item *
 
-C<constraints> - Service constraints
+C<service_name>
 
-=head2 share_environment($users)
+Name of service
+
+=back
+
+=head2 set_service_constraints
+
+Specifies the constraints for the given service.
+
+B<Params>
+
+=over 4
+
+=item *
+
+C<service_name>
+
+Name of service
+
+=item *
+
+C<constraints>
+
+Service constraints
+
+=back
+
+=head2 share_environment
 
 Allows the given users access to the environment.
 
-=head2 unshare_environment($users)
+B<Params>
+
+=over 4
+
+=item *
+
+C<users>
+
+List of users to allow access
+
+=back
+
+=head2 unshare_environment
 
 Removes the given users access to the environment.
 
-=head2 service_destroy ($service_name)
+B<Params>
+
+=over 4
+
+=item *
+
+C<users>
+
+List of users to remove access
+
+=back
+
+=head2 service_destroy
 
 Destroys a service
 
-C<service_name> - name of service
+B<Params>
 
-=head2 service_expose ($service_name)
+=over 4
+
+=item *
+
+C<service_name>
+
+name of service
+
+=back
+
+=head2 service_expose
 
 Expose service
 
-C<service_name> - Name of service
+B<Params>
 
-=head2 service_unexpose ($service_name)
+=over 4
+
+=item *
+
+C<service_name>
+
+Name of service
+
+=back
+
+=head2 service_unexpose
 
 Unexpose service
 
-C<service_name> - Name of service
+B<Params>
+
+=over 4
+
+=item *
+
+C<service_name>
+
+Name of service
+
+=back
 
 =head2 service_charm_relations
 
 All possible relation names of a service
 
-=head2 add_service_units ($service_name, $num_units)
+B<Params>
+
+=over 4
+
+=item *
+
+C<service_name>
+
+Name of service
+
+=back
+
+=head2 add_service_units
 
 Adds given number of units to a service
 
-=head2 add_service_unit ($service_name, $machine_spec)
+B<Params>
+
+=over 4
+
+=item *
+
+C<service_name>
+
+Name of service
+
+=item *
+
+C<num_units>
+
+Number of units to add
+
+=back
+
+=head2 add_service_unit
 
 Add unit to specific machine
 
-=head2 destroy_service_units ($unit_names)
+B<Params>
+
+=over 4
+
+=item *
+
+C<service_name>
+
+Name of service
+
+=item *
+
+C<machine_spec>
+
+Machine to add unit to
+
+=back
+
+=head2 destroy_service_units
 
 Decreases number of units dedicated to a service
 
-=head2 resolved ($unit_name, $retry)
+B<Params>
+
+=over 4
+
+=item *
+
+C<unit_names>
+
+List of units to destroy
+
+=back
+
+=head2 resolved
 
 Clear errors on unit
 
-C<unit_name> - id of unit (eg, mysql/0)
-C<retry> - bool
+B<Params>
+
+=over 4
+
+=item *
+
+C<unit_name>
+
+id of unit (eg, mysql/0)
+
+=item *
+
+C<retry>
+
+Boolean to force a retry
+
+=back
 
 =head2 run
 
@@ -1208,16 +1632,42 @@ Not implemented yet.
 Set annotations on entity, valid types are C<service>, C<unit>,
 C<machine>, C<environment>
 
-=head2 get_annotations ($entity, $entity_type)
+=head2 get_annotations
 
 Returns annotations that have been set on the given entity.
 
-=head2 private_address($target)
+B<Params>
+
+=over 4
+
+=item *
+
+C<entity>
+
+=item *
+
+C<entity_type>
+
+=back
+
+=head2 private_address
 
 Get private address of machine or unit
 
   $self->private_address('1');  # get address of machine 1
   $self->private_address('mysql/0');  # get address of first unit of mysql
+
+B<Params>
+
+=over 4
+
+=item *
+
+C<target>
+
+Target machine
+
+=back
 
 =head2 public_address($target)
 
@@ -1227,9 +1677,39 @@ machine, target is an id not a tag.
   $self->public_address('1');  # get address of machine 1
   $self->public_address('mysql/0');  # get address of first unit of mysql
 
-=head2 service_set_yaml ($service, $yaml)
+B<Params>
+
+=over 4
+
+=item *
+
+C<target>
+
+Target machine
+
+=back
+
+=head2 service_set_yaml
 
 Sets configuration options on a service given options in YAML format.
+
+B<Params>
+
+=over 4
+
+=item *
+
+C<service>
+
+Service Name
+
+=item *
+
+C<yaml>
+
+YAML formatted string of options
+
+=back
 
 =head1 AUTHOR
 

@@ -1,9 +1,9 @@
 
 
 This archive contains the distribution Juju,
-version 1.4:
+version 1.5:
 
-  Pure Perl bindings for Juju
+  Perl bindings for Juju
 
 This software is Copyright (c) 2014 by Adam Stokes.
 

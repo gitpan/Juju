@@ -1,35 +1,103 @@
-# NAME
+package Juju::Util;
+$Juju::Util::VERSION = '1.5';
+# ABSTRACT: helper methods for Juju
 
-Juju - Perl bindings for Juju
 
-# VERSION
+use strict;
+use warnings;
+use HTTP::Tiny;
+use JSON::PP;
+use Params::Validate qw(:all);
+use Class::Tiny {series => qr/precise|trusty|utopic/};
+
+
+sub query_cs {
+    my $self = shift;
+    my ($charm, $series) = validate_pos(
+        @_, 1,
+        {   optional => 1,
+            default  => 'trusty',
+            type     => SCALAR,
+            regex    => $self->series
+        }
+    );
+    my $cs_url = 'https://manage.jujucharms.com/api/3/charm';
+
+    my $composed_url = sprintf("%s/%s/%s", $cs_url, $series, $charm);
+    my $res = HTTP::Tiny->new->get($composed_url);
+    die "Unable to query charm store: ".$res->{reason} unless $res->{success};
+    return decode_json($res->{content});
+}
+
+__END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Juju::Util - helper methods for Juju
+
+=head1 VERSION
 
 version 1.5
 
-# DESCRIPTION
+=head1 SYNOPSIS
 
-Perl non-blocking/blocking bindings for Juju. See
-[Juju::Manual::Quickstart](https://metacpan.org/pod/Juju::Manual::Quickstart) for more information.
+  use Juju::Util;
+  my $util = Juju::Util->new;
+  my $charm = $util->query_cs('wordpress', 'precise');
 
-# AUTHOR
+=head1 METHODS
+
+=head2 query_cs
+
+helper for querying charm store for charm details
+
+B<Params>
+
+=over 4
+
+=item *
+
+C<charm>
+
+name of charm to query
+
+=item *
+
+C<series>
+
+(optional) series to limit to (defaults: trusty)
+
+=back
+
+=head1 AUTHOR
 
 Adam Stokes <adamjs@cpan.org>
 
-# COPYRIGHT AND LICENSE
+=head1 COPYRIGHT AND LICENSE
 
 This software is Copyright (c) 2014 by Adam Stokes.
 
 This is free software, licensed under:
 
-    The MIT (X11) License
+  The MIT (X11) License
 
-# SEE ALSO
+=head1 SEE ALSO
 
 Please see those modules/websites for more information related to this module.
 
-- [https://juju.ubuntu.com](https://juju.ubuntu.com)
+=over 4
 
-# DISCLAIMER OF WARRANTY
+=item *
+
+L<Juju|Juju>
+
+=back
+
+=head1 DISCLAIMER OF WARRANTY
 
 BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
 FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT
@@ -51,3 +119,5 @@ RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
 FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF
 SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGES.
+
+=cut

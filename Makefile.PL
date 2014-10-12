@@ -10,7 +10,7 @@ use ExtUtils::MakeMaker ;
 
 
 my %WriteMakefileArgs = (
-  "ABSTRACT" => "Pure Perl bindings for Juju",
+  "ABSTRACT" => "Perl bindings for Juju",
   "AUTHOR" => "Adam Stokes <adamjs\@cpan.org>",
   "CONFIGURE_REQUIRES" => {
     "ExtUtils::MakeMaker" => 0
@@ -22,11 +22,11 @@ my %WriteMakefileArgs = (
   "PREREQ_PM" => {
     "AnyEvent" => 0,
     "AnyEvent::WebSocket::Client" => 0,
-    "Carp" => 0,
     "Class::Tiny" => 0,
     "Data::Validate::Type" => 0,
     "HTTP::Tiny" => 0,
     "JSON::PP" => 0,
+    "Params::Validate" => 0,
     "YAML::Tiny" => 0,
     "parent" => 0,
     "strict" => 0,
@@ -47,7 +47,7 @@ my %WriteMakefileArgs = (
     "Test::More" => 0,
     "Test::NoTabs" => 0
   },
-  "VERSION" => "1.4",
+  "VERSION" => "1.5",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -57,7 +57,6 @@ my %WriteMakefileArgs = (
 my %FallbackPrereqs = (
   "AnyEvent" => 0,
   "AnyEvent::WebSocket::Client" => 0,
-  "Carp" => 0,
   "Class::Tiny" => 0,
   "Data::Validate::Type" => 0,
   "ExtUtils::MakeMaker" => 0,
@@ -67,6 +66,7 @@ my %FallbackPrereqs = (
   "IO::Socket::SSL" => 0,
   "IPC::Open3" => 0,
   "JSON::PP" => 0,
+  "Params::Validate" => 0,
   "Pod::Elemental::Transformer::List" => 0,
   "Pod::Weaver::Plugin::Encoding" => 0,
   "Pod::Weaver::Section::SeeAlso" => 0,

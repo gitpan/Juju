@@ -1,35 +1,67 @@
-# NAME
+package Juju::Manual;
+$Juju::Manual::VERSION = '1.5';
+# ABSTRACT: Juju Manual
 
-Juju - Perl bindings for Juju
 
-# VERSION
+1;
+
+__END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Juju::Manual - Juju Manual
+
+=head1 VERSION
 
 version 1.5
 
-# DESCRIPTION
+=head1 FAQ
 
-Perl non-blocking/blocking bindings for Juju. See
-[Juju::Manual::Quickstart](https://metacpan.org/pod/Juju::Manual::Quickstart) for more information.
+=over 4
 
-# AUTHOR
+=item *
+
+What is Juju?
+
+Juju is a powerful service orchestration tool from Ubuntu that helps you define, configure and deploy services to any cloud quickly and easily.
+
+=item *
+
+What do the bindings do?
+
+This is a client library for accessing Juju's API L<http://godoc.org/github.com/juju/juju/api#Client>
+
+=back
+
+=head1 AUTHOR
 
 Adam Stokes <adamjs@cpan.org>
 
-# COPYRIGHT AND LICENSE
+=head1 COPYRIGHT AND LICENSE
 
 This software is Copyright (c) 2014 by Adam Stokes.
 
 This is free software, licensed under:
 
-    The MIT (X11) License
+  The MIT (X11) License
 
-# SEE ALSO
+=head1 SEE ALSO
 
 Please see those modules/websites for more information related to this module.
 
-- [https://juju.ubuntu.com](https://juju.ubuntu.com)
+=over 4
 
-# DISCLAIMER OF WARRANTY
+=item *
+
+L<Juju|Juju>
+
+=back
+
+=head1 DISCLAIMER OF WARRANTY
 
 BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
 FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT
@@ -51,3 +83,5 @@ RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
 FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF
 SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGES.
+
+=cut

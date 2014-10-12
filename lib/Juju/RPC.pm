@@ -1,6 +1,6 @@
 package Juju::RPC;
 # ABSTRACT: RPC Class
-$Juju::RPC::VERSION = '1.4';
+$Juju::RPC::VERSION = '1.5';
 
 use strict;
 use warnings;
@@ -66,7 +66,7 @@ Juju::RPC - RPC Class
 
 =head1 VERSION
 
-version 1.4
+version 1.5
 
 =head1 DESCRIPTION
 
@@ -93,7 +93,7 @@ Check if a websocket connection exists
 
 Close connection
 
-=head2 call ($params, $cb)
+=head2 call
 
 Sends event to juju api server, this is the entrypoint for all api calls. If an
 B<error> occurs it will return a response object of:
@@ -110,6 +110,24 @@ Otherwise, successful queries will return:
     Response => { some_successful => 'hash' }
     RequestId => 1
   }
+
+B<Params>
+
+=over 4
+
+=item *
+
+C<params>
+
+Hash of request parameters
+
+=item *
+
+C<cb>
+
+(optional) callback for non-blocking operations
+
+=back
 
 =head1 AUTHOR
 
