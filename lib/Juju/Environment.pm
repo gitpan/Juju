@@ -1,5 +1,5 @@
 package Juju::Environment;
-$Juju::Environment::VERSION = '1.2';
+$Juju::Environment::VERSION = '1.3';
 # ABSTRACT: Exposed juju api environment
 
 
@@ -8,6 +8,9 @@ use warnings;
 use HTTP::Tiny;
 use JSON::PP;
 use YAML::Tiny qw(Dump);
+use Data::Validate::Type qw(:boolean_tests);
+use Carp;
+use DDP;
 use parent 'Juju::RPC';
 
 
@@ -15,7 +18,7 @@ use Class::Tiny qw(password is_authenticated), {
     endpoint => sub {'wss://localhost:17070'},
     username => sub {'user-admin'},
     Jobs     => sub {
-        +{  HostUnits     => 'JobHostUnits',
+        {   HostUnits     => 'JobHostUnits',
             ManageEnviron => 'JobManageEnviron',
             ManageState   => 'JobManageSate'
         };
@@ -68,8 +71,11 @@ sub login {
 
     # block
     my $res = $self->call($params);
-    $self->is_authenticated(1) unless !defined($res->{EnvironTag});
+    die $res->{Error} if defined($res->{Error});
+    $self->is_authenticated(1)
+      unless !defined($res->{Response}->{EnvironTag});
 }
+
 
 
 
@@ -332,18 +338,32 @@ sub environment_set {
 
 
 sub add_machine {
-    my ($self, $series, $constraints, $machine_spec, $parent_id,
-        $container_type)
-      = @_;
-    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+    my $self = shift;
+    my $series = shift // "trusty";
+    # Go ahead and pull this to strip off the argument list
+    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
 
+    my ($constraints, $machine_spec, $parent_id, $container_type) = @_;
     my $params = {
         "Series"        => $series,
-        "Constraints"   => $self->_prepare_constraints($constraints),
-        "ContainerType" => $container_type,
-        "ParentId"      => $parent_id,
-        "Jobs"          => $self->Jobs->{HostUnits},
+        "Jobs"          => [$self->Jobs->{HostUnits}],
+        "ParentId"      => "",
+        "ContainerType" => ""
     };
+
+    # validate constraints
+    if (defined($constraints) and is_hashref($constraints)) {
+        $params->{Constraints} = $self->_prepare_constraints($constraints);
+    }
+
+    # if we're here then assume constraints is good and we can check the
+    # rest of the arguments
+    if (defined($machine_spec)) {
+        die "Cant specify machine spec with container_type/parent_id"
+          if $parent_id or $container_type;
+        ($params->{ParentId}, $params->{ContainerType}) = split /:/,
+          $machine_spec;
+    }
 
     return $self->add_machines([$params]) unless $cb;
     return $self->add_machines([$params], $cb);
@@ -879,7 +899,7 @@ Juju::Environment - Exposed juju api environment
 
 =head1 VERSION
 
-version 1.2
+version 1.3
 
 =head1 SYNOPSIS
 
@@ -929,7 +949,7 @@ B<Returns> - an updated constraint hash with any integers set properly.
 
 =head2 login
 
-Login to juju
+Login to juju, will die on a failed login attempt.
 
 =head2 reconnect
 

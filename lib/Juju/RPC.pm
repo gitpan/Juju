@@ -1,6 +1,6 @@
 package Juju::RPC;
 # ABSTRACT: RPC Class
-$Juju::RPC::VERSION = '1.2';
+$Juju::RPC::VERSION = '1.3';
 
 use strict;
 use warnings;
@@ -24,10 +24,7 @@ sub BUILD {
             my ($conn, $message) = @_;
             my $body = decode_json($message->decoded_body);
             if (defined($body->{Response})) {
-                $self->done->send($body->{Response});
-            }
-            else {
-                die 'Error: ' . $message->decoded_body;
+                $self->done->send($body);
             }
         }
     );
@@ -69,7 +66,7 @@ Juju::RPC - RPC Class
 
 =head1 VERSION
 
-version 1.2
+version 1.3
 
 =head1 DESCRIPTION
 
@@ -98,7 +95,21 @@ Close connection
 
 =head2 call ($params, $cb)
 
-Sends event to juju api server
+Sends event to juju api server, this is the entrypoint for all api calls. If an
+B<error> occurs it will return a response object of:
+
+  {
+    Error => 'Error message',
+    RequestId => 1,
+    Response => {}
+  }
+
+Otherwise, successful queries will return:
+
+  {
+    Response => { some_successful => 'hash' }
+    RequestId => 1
+  }
 
 =head1 AUTHOR
 
