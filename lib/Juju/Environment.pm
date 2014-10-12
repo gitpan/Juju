@@ -1,5 +1,5 @@
 package Juju::Environment;
-$Juju::Environment::VERSION = '1.5';
+$Juju::Environment::VERSION = '1.5.1';
 # ABSTRACT: Exposed juju api environment
 
 
@@ -322,11 +322,15 @@ sub environment_set {
 
 sub add_machine {
     my $self = shift;
-    my $series = shift // "trusty";
-    # Go ahead and pull this to strip off the argument list
-    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
+    my ($series, $constraints, $machine_spec, $parent_id, $container_type) =
+      validate_pos(
+        @_,
+        {default => 'trusty'},
+        {type    => HASHREF, default => +{}},
+        0, 0, 0
+      );
 
-    my ($constraints, $machine_spec, $parent_id, $container_type) = @_;
+    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
     my $params = {
         "Series"        => $series,
         "Jobs"          => [$self->Jobs->{HostUnits}],
@@ -459,7 +463,17 @@ sub deploy {
         Request => "ServiceDeploy",
         Params  => {ServiceName => $service_name}
     };
-    my $_charm_url = $self->util->query_cs($charm);
+
+    # Check for series format
+    my (@charm_args) = $charm =~ /(\w+)\/(\w+)/i;
+    my $_charm_url = undef;
+    if (scalar @charm_args == 2) {
+        $_charm_url = $self->util->query_cs($charm_args[1], $charm_args[0]);
+    }
+    else {
+        $_charm_url = $self->util->query_cs($charm);
+    }
+
     $params->{Params}->{CharmUrl} = $_charm_url->{charm}->{url};
     $num_units = 1 unless $num_units;
     $params->{Params}->{NumUnits} = $num_units;
@@ -483,10 +497,12 @@ sub deploy {
 
 
 sub service_set {
-    my ($self, $service_name, $config) = @_;
-    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+    my $self = shift;
+    my ($service_name, $config) =
+      validate_pos(@_, {type => SCALAR}, {type => HASHREF, optional => 1});
 
-    die "Not a hash" unless ref $config eq 'HASH';
+    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
+
     my $params = {
         "Type"    => "Client",
         "Request" => "ServiceSet",
@@ -495,6 +511,7 @@ sub service_set {
             "Options"     => $config
         }
     };
+
     # block
     return $self->call($params) unless $cb;
 
@@ -907,7 +924,7 @@ Juju::Environment - Exposed juju api environment
 
 =head1 VERSION
 
-version 1.5
+version 1.5.1
 
 =head1 SYNOPSIS
 
@@ -943,7 +960,7 @@ Supported juju jobs
 
 =head1 METHODS
 
-=head2 _prepare_constraints ($constraints)
+=head2 _prepare_constraints
 
 Makes sure cpu-cores, cpu-power, mem are integers
 
@@ -965,7 +982,7 @@ Login to juju, will die on a failed login attempt.
 
 =head2 reconnect
 
-Reconnects to API server in case of timeout
+Reconnects to API server in case of timeout, this also resets the RequestId.
 
 =head2 environment_info
 
@@ -1269,7 +1286,7 @@ B<Params>
 
 C<charm>
 
-charm to deploy
+charm to deploy, can be in the format of B<series/charm> if needing to specify a different series
 
 =item *
 
@@ -1669,7 +1686,7 @@ Target machine
 
 =back
 
-=head2 public_address($target)
+=head2 public_address
 
 Returns the public address of the specified machine or unit. For a
 machine, target is an id not a tag.
