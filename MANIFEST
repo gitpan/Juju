@@ -8,7 +8,6 @@ README
 README.mkdn
 cpanfile
 dist.ini
-eg/envinfo-ae.pl
 eg/envinfo.pl
 lib/Juju.pm
 lib/Juju/Environment.pm
@@ -20,6 +19,7 @@ t/00-report-prereqs.t
 t/01-auth.t
 t/02-environment.t
 t/03-machines.t
+t/04-deploy.t
 t/release-kwalitee.t
 t/release-minimum-version.t
 weaver.ini

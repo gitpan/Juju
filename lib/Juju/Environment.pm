@@ -1,5 +1,5 @@
 package Juju::Environment;
-$Juju::Environment::VERSION = '1.3';
+$Juju::Environment::VERSION = '1.4';
 # ABSTRACT: Exposed juju api environment
 
 
@@ -10,7 +10,6 @@ use JSON::PP;
 use YAML::Tiny qw(Dump);
 use Data::Validate::Type qw(:boolean_tests);
 use Carp;
-use DDP;
 use parent 'Juju::RPC';
 
 
@@ -463,45 +462,60 @@ sub remove_relation {
 
 
 sub deploy {
-    my ($self, $service_name, $charm_url, $num_units, $config_yaml,
-        $constraints, $machine_spec)
-      = @_;
-    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+    my $self         = shift;
+    my $charm        = shift // die "Requires charm";
+    my $service_name = shift // die "Requires service name";
+    my $cb           = ref $_[-1] eq 'CODE' ? pop : undef;
 
-    my $params = {ServiceName => $service_name};
+    # parse additional arguments
+    my ($num_units, $config_yaml, $constraints, $machine_spec) = @_;
+
+    my $params = {
+        Type    => "Client",
+        Request => "ServiceDeploy",
+        Params  => {ServiceName => $service_name}
+    };
+    my $_charm_url = $self->query_cs($charm);
+    $params->{Params}->{CharmUrl} = $_charm_url->{charm}->{url};
     $num_units = 1 unless $num_units;
-    $params->{NumUnits}   = $num_units;
-    $params->{ConfigYAML} = $config_yaml;
-    my $svc_constraints;
-    if ($constraints) {
-        $params->{Constraints} = $self->_prepare_constraints($constraints);
+    $params->{Params}->{NumUnits} = $num_units;
+    $params->{Params}->{ConfigYAML} =
+      defined($config_yaml) ? $config_yaml : "";
+
+    if (defined($constraints) and is_hashref($constraints)) {
+        $params->{Params}->{Constraints} =
+          $self->_prepare_constraints($constraints);
     }
     if ($machine_spec) {
-        $params->{ToMachineSpec} = $machine_spec;
+        $params->{Params}->{ToMachineSpec} = "$machine_spec";
     }
-    $self->call(
-        {   "Type"    => "Client",
-            "Request" => "ServiceDeploy",
-            "Params"  => $params
-        }
-    );
+
+    # block
+    return $self->call($params) unless $cb;
+
+    # non-block
+    return $self->call($params, $cb);
 }
 
 
-sub set_config {
+sub service_set {
     my ($self, $service_name, $config) = @_;
     my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
 
     die "Not a hash" unless ref $config eq 'HASH';
-    return $self->call(
-        {   "Type"    => "Client",
-            "Request" => "ServiceSet",
-            "Params"  => {
-                "ServiceName" => $service_name,
-                "Options"     => $config
-            }
+    my $params = {
+        "Type"    => "Client",
+        "Request" => "ServiceSet",
+        "Params"  => {
+            "ServiceName" => $service_name,
+            "Options"     => $config
         }
-    );
+    };
+    # block
+    return $self->call($params) unless $cb;
+
+    # non-block
+    return $self->call($params, $cb);
 }
 
 
@@ -509,37 +523,47 @@ sub unset_config {
     my ($self, $service_name, $config_keys) = @_;
     my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
 
-    return $self->call(
+    my $params = 
         {   "Type"    => "Client",
             "Request" => "ServiceUnset",
             "Params"  => {
                 "ServiceName" => $service_name,
                 "Options"     => $config_keys
             }
-        }
-    );
+        };
+
+    # block
+    return $self->call($params) unless $cb;
+
+    # non-block
+    return $self->call($params, $cb);
 }
 
 
 sub set_charm {
     my ($self, $service_name, $charm_url, $force) = @_;
-    my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
+    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
 
     $force = 0 unless $force;
-    $self->call(
-        {   "Type"    => "Client",
-            "Request" => "ServiceSetCharm",
-            "Params"  => {
-                "ServiceName" => $service_name,
-                "CharmUrl"    => $charm_url,
-                "Force"       => $force
-            }
+    my $params = {
+        "Type"    => "Client",
+        "Request" => "ServiceSetCharm",
+        "Params"  => {
+            "ServiceName" => $service_name,
+            "CharmUrl"    => $charm_url,
+            "Force"       => $force
         }
-    );
+    };
+
+    # block
+    return $self->call($params) unless $cb;
+
+    # non-block
+    return $self->call($params, $cb);
 }
 
 
-sub get_service {
+sub service_get {
     my ($self, $service_name) = @_;
     my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
     my $params = {
@@ -560,7 +584,7 @@ sub get_config {
     my ($self, $service_name) = @_;
     my $cb     = ref $_[-1] eq 'CODE' ? pop : undef;
 
-    my $svc = $self->get_service($service_name);
+    my $svc = $self->service_get($service_name);
     return $svc->{Config} unless $cb;
     return $cb->($svc->{Config});
 }
@@ -899,7 +923,7 @@ Juju::Environment - Exposed juju api environment
 
 =head1 VERSION
 
-version 1.3
+version 1.4
 
 =head1 SYNOPSIS
 
@@ -1070,11 +1094,11 @@ Sets a relation between units
 
 Removes relation between endpoints
 
-=head2 deploy ($service_name, $charm_url, $num_units, $config_yaml, $constraints, $machine_spec)
+=head2 deploy ($charm, $service_name, $num_units, $config_yaml, $constraints, $machine_spec)
 
 Deploys a charm to service
 
-=head2 set_config ($service_name, $config)
+=head2 service_set ($service_name, $config)
 
 Set's configuration parameters for unit
 
@@ -1082,7 +1106,7 @@ C<service_name> - name of service (ie. blog)
 
 C<config> - hash of config parameters
 
-=head2 unset_config ($service_name, $config_keys)
+=head2 service_unset ($service_name, $config_keys)
 
 Unsets configuration value for service to restore charm defaults
 
@@ -1090,7 +1114,7 @@ C<service_name> - name of service
 
 C<config_keys> - hash of config keys to unset
 
-=head2 set_charm ($service_name, $charm_url, $force)
+=head2 service_set_charm ($service_name, $charm_url, $force)
 
 Sets charm url for service
 
@@ -1098,7 +1122,7 @@ C<service_name> - name of service
 
 C<charm_url> - charm location (ie. cs:precise/wordpress)
 
-=head2 get_service ($service_name)
+=head2 service_get ($service_name)
 
 Returns information on charm, config, constraints, service keys.
 
