@@ -23,6 +23,7 @@ my %WriteMakefileArgs = (
     "AnyEvent" => 0,
     "AnyEvent::WebSocket::Client" => 0,
     "Class::Tiny" => 0,
+    "DDP" => 0,
     "Data::Validate::Type" => 0,
     "HTTP::Tiny" => 0,
     "JSON::PP" => 0,
@@ -47,7 +48,7 @@ my %WriteMakefileArgs = (
     "Test::More" => 0,
     "Test::NoTabs" => 0
   },
-  "VERSION" => "1.5.1",
+  "VERSION" => "1.6",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -58,6 +59,7 @@ my %FallbackPrereqs = (
   "AnyEvent" => 0,
   "AnyEvent::WebSocket::Client" => 0,
   "Class::Tiny" => 0,
+  "DDP" => 0,
   "Data::Validate::Type" => 0,
   "ExtUtils::MakeMaker" => 0,
   "File::Spec" => 0,

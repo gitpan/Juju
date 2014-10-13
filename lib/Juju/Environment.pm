@@ -1,5 +1,5 @@
 package Juju::Environment;
-$Juju::Environment::VERSION = '1.5.1';
+$Juju::Environment::VERSION = '1.6';
 # ABSTRACT: Exposed juju api environment
 
 
@@ -10,6 +10,7 @@ use YAML::Tiny qw(Dump);
 use Data::Validate::Type qw(:boolean_tests);
 use Params::Validate qw(:all);
 use Juju::Util;
+use DDP;
 use parent 'Juju::RPC';
 
 
@@ -323,12 +324,7 @@ sub environment_set {
 sub add_machine {
     my $self = shift;
     my ($series, $constraints, $machine_spec, $parent_id, $container_type) =
-      validate_pos(
-        @_,
-        {default => 'trusty'},
-        {type    => HASHREF, default => +{}},
-        0, 0, 0
-      );
+      validate_pos(@_, {default => 'trusty'}, 0, 0, 0, 0);
 
     my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
     my $params = {
@@ -451,48 +447,46 @@ sub remove_relation {
 
 sub deploy {
     my $self = shift;
-    my ($charm, $service_name) =
-      validate_pos(@_, {type => SCALAR}, {type => SCALAR});
-    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
-
-    # parse additional arguments
-    my ($num_units, $config_yaml, $constraints, $machine_spec) = @_;
+    my %p    = validate(
+        @_,
+        {   charm        => {type    => SCALAR},
+            service_name => {type    => SCALAR},
+            num_units    => {default => 1},
+            config_yaml  => {default => ""},
+            constraints  => {default => +{}, type => HASHREF},
+            machine_spec => {default => ""},
+            cb           => {default => undef}
+        }
+    );
 
     my $params = {
         Type    => "Client",
         Request => "ServiceDeploy",
-        Params  => {ServiceName => $service_name}
+        Params  => {ServiceName => $p{service_name}}
     };
 
     # Check for series format
-    my (@charm_args) = $charm =~ /(\w+)\/(\w+)/i;
+    my (@charm_args) = $p{charm} =~ /(\w+)\/(\w+)/i;
     my $_charm_url = undef;
     if (scalar @charm_args == 2) {
         $_charm_url = $self->util->query_cs($charm_args[1], $charm_args[0]);
     }
     else {
-        $_charm_url = $self->util->query_cs($charm);
+        $_charm_url = $self->util->query_cs($p{charm});
     }
 
-    $params->{Params}->{CharmUrl} = $_charm_url->{charm}->{url};
-    $num_units = 1 unless $num_units;
-    $params->{Params}->{NumUnits} = $num_units;
-    $params->{Params}->{ConfigYAML} =
-      defined($config_yaml) ? $config_yaml : "";
-
-    if (defined($constraints) and is_hashref($constraints)) {
-        $params->{Params}->{Constraints} =
-          $self->_prepare_constraints($constraints);
-    }
-    if ($machine_spec) {
-        $params->{Params}->{ToMachineSpec} = "$machine_spec";
-    }
+    $params->{Params}->{CharmUrl}   = $_charm_url->{charm}->{url};
+    $params->{Params}->{NumUnits}   = $p{num_units};
+    $params->{Params}->{ConfigYAML} = $p{config_yaml};
+    $params->{Params}->{Constraints} =
+      $self->_prepare_constraints($p{constraints});
+    $params->{Params}->{ToMachineSpec} = "$p{machine_spec}";
 
     # block
-    return $self->call($params) unless $cb;
+    return $self->call($params) unless $p{cb};
 
     # non-block
-    return $self->call($params, $cb);
+    return $self->call($params, $p{cb});
 }
 
 
@@ -924,7 +918,7 @@ Juju::Environment - Exposed juju api environment
 
 =head1 VERSION
 
-version 1.5.1
+version 1.6
 
 =head1 SYNOPSIS
 
@@ -1276,7 +1270,16 @@ Second unit endpoint
 
 =head2 deploy
 
-Deploys a charm to service
+Deploys a charm to service, named parameters are required here:
+
+    $juju->deploy(
+        charm        => 'mysql',
+        service_name => 'mysql',
+        cb           => sub {
+            my $val = shift;
+            print Dumper($val) if defined($val->{Error});
+        }
+    );
 
 B<Params>
 
@@ -1292,7 +1295,7 @@ charm to deploy, can be in the format of B<series/charm> if needing to specify a
 
 C<service_name>
 
-name of service to set. can be same name as charm, however, recommended to pick something unique and identifiable.
+name of service to set. same name as charm
 
 =item *
 

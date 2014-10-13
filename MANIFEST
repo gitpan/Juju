@@ -8,6 +8,7 @@ README
 README.mkdn
 cpanfile
 dist.ini
+eg/deploy.pl
 eg/envinfo.pl
 lib/Juju.pm
 lib/Juju/Environment.pm

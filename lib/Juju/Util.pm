@@ -1,5 +1,5 @@
 package Juju::Util;
-$Juju::Util::VERSION = '1.5.1';
+$Juju::Util::VERSION = '1.6';
 # ABSTRACT: helper methods for Juju
 
 
@@ -29,6 +29,8 @@ sub query_cs {
     return decode_json($res->{content});
 }
 
+1;
+
 __END__
 
 =pod
@@ -41,7 +43,7 @@ Juju::Util - helper methods for Juju
 
 =head1 VERSION
 
-version 1.5.1
+version 1.6
 
 =head1 SYNOPSIS
 
