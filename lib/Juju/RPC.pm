@@ -1,6 +1,6 @@
 package Juju::RPC;
 # ABSTRACT: RPC Class
-$Juju::RPC::VERSION = '1.6';
+$Juju::RPC::VERSION = '1.7';
 
 use strict;
 use warnings;
@@ -66,7 +66,7 @@ Juju::RPC - RPC Class
 
 =head1 VERSION
 
-version 1.6
+version 1.7
 
 =head1 DESCRIPTION
 

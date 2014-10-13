@@ -1,5 +1,5 @@
 package Juju::Environment;
-$Juju::Environment::VERSION = '1.6';
+$Juju::Environment::VERSION = '1.7';
 # ABSTRACT: Exposed juju api environment
 
 
@@ -10,7 +10,6 @@ use YAML::Tiny qw(Dump);
 use Data::Validate::Type qw(:boolean_tests);
 use Params::Validate qw(:all);
 use Juju::Util;
-use DDP;
 use parent 'Juju::RPC';
 
 
@@ -428,7 +427,7 @@ sub add_relation {
 }
 
 
-sub remove_relation {
+sub destroy_relation {
     my ($self, $endpoint_a, $endpoint_b) = @_;
     my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
     my $params = {
@@ -812,6 +811,59 @@ sub resolved {
 
 
 
+sub run {
+    my $self = shift;
+    my %p    = validate(
+        @_,
+        {   command  => {type => SCALAR},
+            timeout  => {type => SCALAR, default => 300},
+            machines => {type => ARRAYREF, optional => 1},
+            services => {type => ARRAYREF, optional => 1, default => +[]},
+            units    => {type => ARRAYREF, optional => 1, default => +[]},
+            cb => {type => CODEREF, optional => 1}
+        }
+    );
+    my $params = {
+        Type    => "Client",
+        Request => "Run",
+        Params  => {
+            Commands => $p{command},
+            Timeout  => $p{timeout},
+            Machines => @{$p{machines}},
+            Services => @{$p{services}},
+            Units    => @{$p{units}}
+        }
+    };
+
+    # block
+    return $self->call($params) unless $p{cb};
+
+    # non-block
+    return $self->call($params, $p{cb});
+}
+
+
+sub run_on_all_machines {
+    my ($self, $command, $timeout) = @_;
+
+    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
+
+    my $params = {
+        Type    => "Client",
+        Request => "RunOnAllMachines",
+        Params  => {
+            Commands => $command,
+            Timeout  => int($timeout)
+        }
+    };
+
+    # block
+    return $self->call($params) unless $cb;
+
+    # non-block
+    return $self->call($params, $cb);
+}
+
 
 sub set_annotations {
     my ($self, $entity, $entity_type, $annotation) = @_;
@@ -918,7 +970,7 @@ Juju::Environment - Exposed juju api environment
 
 =head1 VERSION
 
-version 1.6
+version 1.7
 
 =head1 SYNOPSIS
 
@@ -988,7 +1040,7 @@ Environment UUID from client connection
 
 =head2 environment_unset
 
-Environment UUID from client connection
+Unset Environment settings
 
 B<Params>
 
@@ -1246,7 +1298,7 @@ Second unit endpoint
 
 =back
 
-=head2 remove_relation
+=head2 destroy_relation
 
 Removes relation between endpoints
 
@@ -1645,12 +1697,108 @@ Boolean to force a retry
 
 =head2 run
 
-Not implemented yet.
+Run the Commands specified on the machines identified through the ids
+provided in the machines, services and units slices.
+
+Required parameters B<Commands>, B<Timeout>, and at B<least one>
+C<Machine>, C<Service>, or C<Unit>.
+
+    {
+       command => "",
+       timeout => TIMEDURATION
+       machines => [MACHINE_IDS],
+       services => [SERVICES_IDS],
+       units => [UNITS_ID]
+    }
+
+Requires named parameters
+
+B<Params>
+
+=over 4
+
+=item *
+
+C<command>
+
+command to run
+
+=item *
+
+C<timeout>
+
+timeout
+
+=item *
+
+C<machines>
+
+(optional) List of machine ids
+
+=item *
+
+C<services>
+
+(optional) List of services ids
+
+=item *
+
+C<units>
+
+(optional) List of unit ids
+
+=item *
+
+C<cb>
+
+(optional) callback
+
+=back
+
+=head2 run_on_all_machines
+
+Runs the command on all the machines with the specified timeout.
+
+B<Params>
+
+=over 4
+
+=item *
+
+C<command>
+
+command to run
+
+=item *
+
+C<timeout>
+
+timeout
+
+=back
 
 =head2 set_annotations
 
 Set annotations on entity, valid types are C<service>, C<unit>,
 C<machine>, C<environment>
+
+B<Params>
+
+=over 4
+
+=item *
+
+C<entity>
+
+=item *
+
+C<entity_type>
+
+=item *
+
+C<annotation>
+
+=back
 
 =head2 get_annotations
 
