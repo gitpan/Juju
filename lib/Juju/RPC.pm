@@ -1,20 +1,22 @@
 package Juju::RPC;
 # ABSTRACT: RPC Class
-$Juju::RPC::VERSION = '1.7';
+$Juju::RPC::VERSION = '1.8';
 
 use strict;
 use warnings;
 use AnyEvent;
 use AnyEvent::WebSocket::Client;
 use JSON::PP;
+use Function::Parameters qw(:strict);
+use Moo::Role;
 
-use Class::Tiny qw(conn result is_connected done), {
-    request_id => 1,
-};
+has conn         => (is => 'rw', lazy => 1);
+has result       => (is => 'rw', lazy => 1);
+has is_connected => (is => 'rw', lazy => 1);
+has done         => (is => 'rw', lazy => 1);
+has request_id   => (is => 'rw', lazy => 1, default => 1);
 
-
-sub BUILD {
-    my $self = shift;
+method BUILD {
     my $client = AnyEvent::WebSocket::Client->new(ssl_no_verify => 1);
     $self->conn($client->connect($self->endpoint)->recv);
     $self->is_connected(1);
@@ -30,14 +32,12 @@ sub BUILD {
     );
 }
 
-sub close {
-    my $self = shift;
+method close {
     $self->conn->close;
 }
 
-sub call {
-    my ($self, $params, $cb) = @_;
 
+method call($params, $cb = undef) {
     $self->done(AnyEvent->condvar);
 
     # Increment request id
@@ -66,7 +66,7 @@ Juju::RPC - RPC Class
 
 =head1 VERSION
 
-version 1.7
+version 1.8
 
 =head1 DESCRIPTION
 

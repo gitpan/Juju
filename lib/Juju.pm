@@ -1,12 +1,13 @@
 package Juju;
-$Juju::VERSION = '1.7';
+$Juju::VERSION = '1.8';
 # ABSTRACT: Perl bindings for Juju
 
 
 use strict;
 use warnings;
-
-use parent 'Juju::Environment';
+use Moo;
+use namespace::clean;
+extends 'Juju::Environment';
 
 1;
 
@@ -22,7 +23,7 @@ Juju - Perl bindings for Juju
 
 =head1 VERSION
 
-version 1.7
+version 1.8
 
 =head1 DESCRIPTION
 

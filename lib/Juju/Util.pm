@@ -1,5 +1,5 @@
 package Juju::Util;
-$Juju::Util::VERSION = '1.7';
+$Juju::Util::VERSION = '1.8';
 # ABSTRACT: helper methods for Juju
 
 
@@ -7,20 +7,14 @@ use strict;
 use warnings;
 use HTTP::Tiny;
 use JSON::PP;
-use Params::Validate qw(:all);
-use Class::Tiny {series => qr/precise|trusty|utopic/};
+use Function::Parameters qw(:strict);
+use Moo;
+use namespace::clean;
+
+has series => (is => 'ro', default => sub { qr/precise|trusty|utopic/ });
 
 
-sub query_cs {
-    my $self = shift;
-    my ($charm, $series) = validate_pos(
-        @_, 1,
-        {   optional => 1,
-            default  => 'trusty',
-            type     => SCALAR,
-            regex    => $self->series
-        }
-    );
+method query_cs($charm, $series = "trusty") {
     my $cs_url = 'https://manage.jujucharms.com/api/3/charm';
 
     my $composed_url = sprintf("%s/%s/%s", $cs_url, $series, $charm);
@@ -43,7 +37,7 @@ Juju::Util - helper methods for Juju
 
 =head1 VERSION
 
-version 1.7
+version 1.8
 
 =head1 SYNOPSIS
 
