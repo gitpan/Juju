@@ -1,5 +1,5 @@
 package Juju::Util;
-$Juju::Util::VERSION = '1.8';
+$Juju::Util::VERSION = '1.9';
 # ABSTRACT: helper methods for Juju
 
 
@@ -7,7 +7,7 @@ use strict;
 use warnings;
 use HTTP::Tiny;
 use JSON::PP;
-use Function::Parameters qw(:strict);
+use Method::Signatures;
 use Moo;
 use namespace::clean;
 
@@ -37,7 +37,7 @@ Juju::Util - helper methods for Juju
 
 =head1 VERSION
 
-version 1.8
+version 1.9
 
 =head1 SYNOPSIS
 

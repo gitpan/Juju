@@ -1,5 +1,5 @@
 package Juju;
-$Juju::VERSION = '1.8';
+$Juju::VERSION = '1.9';
 # ABSTRACT: Perl bindings for Juju
 
 
@@ -23,7 +23,7 @@ Juju - Perl bindings for Juju
 
 =head1 VERSION
 
-version 1.8
+version 1.9
 
 =head1 DESCRIPTION
 

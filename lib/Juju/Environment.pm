@@ -1,5 +1,5 @@
 package Juju::Environment;
-$Juju::Environment::VERSION = '1.8';
+$Juju::Environment::VERSION = '1.9';
 # ABSTRACT: Exposed juju api environment
 
 
@@ -7,9 +7,9 @@ use strict;
 use warnings;
 use JSON::PP;
 use YAML::Tiny qw(Dump);
-use Data::Validate::Type qw(:boolean_tests);
-use Function::Parameters qw(:strict);
+use Method::Signatures;
 use Juju::Util;
+use Types::Standard qw(ArrayRef Str HashRef);
 use Moo;
 use namespace::clean;
 with 'Juju::RPC';
@@ -292,7 +292,7 @@ method environment_set ($config, $cb = undef) {
 }
 
 
-method add_machine ($series, $constraints = undef, $machine_spec = undef, $parent_id = undef, $container_type = undef, $cb = undef) {
+method add_machine ($series, HashRef $constraints = +{}, $machine_spec = undef, $parent_id = undef, $container_type = undef, $cb = undef) {
     my $params = {
         "Series"        => $series,
         "Jobs"          => [$self->Jobs->{HostUnits}],
@@ -301,9 +301,7 @@ method add_machine ($series, $constraints = undef, $machine_spec = undef, $paren
     };
 
     # validate constraints
-    if (defined($constraints) and is_hashref($constraints)) {
-        $params->{Constraints} = $self->_prepare_constraints($constraints);
-    }
+    $params->{Constraints} = $self->_prepare_constraints($constraints);
 
     # if we're here then assume constraints is good and we can check the
     # rest of the arguments
@@ -367,6 +365,36 @@ method destroy_machines ($machine_ids, $force = 0, $cb = undef) {
     # non-block
     return $self->call($params, $cb);
 
+}
+
+
+
+method provisioning_script($cb = undef) {
+    my $params = {
+        "Type"    => "Client",
+        "Request" => "ProvisioningScript"
+    };
+
+    # block
+    return $self->call($params) unless $cb;
+
+    # non-block
+    return $self->call($params, $cb);
+}
+
+
+method retry_provisioning (ArrayRef $machines, $cb = undef) {
+    my $params = {
+        "Type"    => "Client",
+        "Request" => "RetryProvisioning",
+        "Params"  => @{$machines}
+    };
+
+    # block
+    return $self->call($params) unless $cb;
+
+    # non-block
+    return $self->call($params, $cb);
 }
 
 
@@ -830,7 +858,6 @@ method service_set_yaml ($service, $yaml, $cb = undef) {
     return $self->call($params, $cb);
 }
 
-
 1;
 
 __END__
@@ -845,7 +872,7 @@ Juju::Environment - Exposed juju api environment
 
 =head1 VERSION
 
-version 1.8
+version 1.9
 
 =head1 SYNOPSIS
 
@@ -1154,7 +1181,25 @@ Force destroy
 
 =head2 provisioning_script
 
-Not implemented
+Returns a shell script that, when run, provisions a machine agent on
+the machine executing the script.
+
+=head2 retry_provisioning
+
+Updates the provisioning status of a machine allowing the provisioner
+to retry.
+
+B<Params>
+
+=over 4
+
+=item *
+
+C<machines>
+
+Array of machines
+
+=back
 
 =head2 add_relation
 

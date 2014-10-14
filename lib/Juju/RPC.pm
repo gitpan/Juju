@@ -1,13 +1,13 @@
 package Juju::RPC;
 # ABSTRACT: RPC Class
-$Juju::RPC::VERSION = '1.8';
+$Juju::RPC::VERSION = '1.9';
 
 use strict;
 use warnings;
 use AnyEvent;
 use AnyEvent::WebSocket::Client;
 use JSON::PP;
-use Function::Parameters qw(:strict);
+use Method::Signatures;
 use Moo::Role;
 
 has conn         => (is => 'rw', lazy => 1);
@@ -16,7 +16,8 @@ has is_connected => (is => 'rw', lazy => 1);
 has done         => (is => 'rw', lazy => 1);
 has request_id   => (is => 'rw', lazy => 1, default => 1);
 
-method BUILD {
+sub BUILD {
+    my $self = shift;
     my $client = AnyEvent::WebSocket::Client->new(ssl_no_verify => 1);
     $self->conn($client->connect($self->endpoint)->recv);
     $self->is_connected(1);
@@ -66,7 +67,7 @@ Juju::RPC - RPC Class
 
 =head1 VERSION
 
-version 1.8
+version 1.9
 
 =head1 DESCRIPTION
 
