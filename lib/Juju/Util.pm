@@ -1,5 +1,5 @@
 package Juju::Util;
-$Juju::Util::VERSION = '1.9';
+$Juju::Util::VERSION = '2.0';
 # ABSTRACT: helper methods for Juju
 
 
@@ -37,7 +37,7 @@ Juju::Util - helper methods for Juju
 
 =head1 VERSION
 
-version 1.9
+version 2.0
 
 =head1 SYNOPSIS
 

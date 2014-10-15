@@ -1,5 +1,5 @@
 package Juju::Environment;
-$Juju::Environment::VERSION = '1.9';
+$Juju::Environment::VERSION = '2.0';
 # ABSTRACT: Exposed juju api environment
 
 
@@ -9,7 +9,7 @@ use JSON::PP;
 use YAML::Tiny qw(Dump);
 use Method::Signatures;
 use Juju::Util;
-use Types::Standard qw(ArrayRef Str HashRef);
+use Types::Standard qw(ArrayRef Int Str HashRef);
 use Moo;
 use namespace::clean;
 with 'Juju::RPC';
@@ -32,7 +32,7 @@ has util => (is => 'ro', default => sub { Juju::Util->new });
 
 
 
-method _prepare_constraints ($constraints) {
+method _prepare_constraints (HashRef $constraints) {
     foreach my $key (keys %{$constraints}) {
         if ($key =~ /^(cpu-cores|cpu-power|mem|root-disk)/) {
             $constraints->{k} = int($constraints->{k});
@@ -92,7 +92,7 @@ method environment_uuid ($cb = undef) {
 
 
 
-method environment_unset ($items, $cb = undef) {
+method environment_unset (HashRef $items, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "EnvironmentUnset",
@@ -107,7 +107,7 @@ method environment_unset ($items, $cb = undef) {
 }
 
 
-method find_tools ($major, $minor, $series, $arch, $cb = undef) {
+method find_tools (Int $major, Int $minor, Str $series, Str $arch, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "EnvironmentUnset",
@@ -191,7 +191,7 @@ method get_watcher ($cb = undef) {
 }
 
 
-method get_watched_tasks ($watcher_id, $cb = undef) {
+method get_watched_tasks (Int $watcher_id, $cb = undef) {
     die "Unable to run synchronously, provide a callback" unless $cb;
 
     my $params =
@@ -203,7 +203,7 @@ method get_watched_tasks ($watcher_id, $cb = undef) {
 
 
 
-method add_charm ($charm_url, $cb = undef) {
+method add_charm (Str $charm_url, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "AddCharm",
@@ -218,7 +218,7 @@ method add_charm ($charm_url, $cb = undef) {
 }
 
 
-method get_charm ($charm_url, $cb = undef) {
+method get_charm (Str $charm_url, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "CharmInfo",
@@ -248,7 +248,7 @@ method get_environment_constraints ($cb = undef) {
 }
 
 
-method set_environment_constraints (ArrayRef $constraints, $cb = undef) {
+method set_environment_constraints (HashRef $constraints, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "SetEnvironmentConstraints",
@@ -277,7 +277,7 @@ method environment_get ($cb = undef) {
 }
 
 
-method environment_set ($config, $cb = undef) {
+method environment_set (HashRef $config, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "EnvironmentSet",
@@ -292,7 +292,7 @@ method environment_set ($config, $cb = undef) {
 }
 
 
-method add_machine ($series, HashRef $constraints = +{}, $machine_spec = undef, $parent_id = undef, $container_type = undef, $cb = undef) {
+method add_machine ($series, HashRef $constraints = +{}, Str $machine_spec = "", Str $parent_id = "", Str $container_type = "", $cb = undef) {
     my $params = {
         "Series"        => $series,
         "Jobs"          => [$self->Jobs->{HostUnits}],
@@ -317,7 +317,7 @@ method add_machine ($series, HashRef $constraints = +{}, $machine_spec = undef, 
 }
 
 
-method add_machines ($machines, $cb = undef) {
+method add_machines (ArrayRef $machines, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "AddMachines",
@@ -348,7 +348,7 @@ method destroy_environment ($cb = undef) {
 }
 
 
-method destroy_machines ($machine_ids, $force = 0, $cb = undef) {
+method destroy_machines (ArrayRef $machine_ids, $force = 0, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "DestroyMachines",
@@ -398,7 +398,7 @@ method retry_provisioning (ArrayRef $machines, $cb = undef) {
 }
 
 
-method add_relation ($endpoint_a, $endpoint_b, $cb = undef) {
+method add_relation (Str $endpoint_a, Str $endpoint_b, $cb = undef) {
     my $params = {
         'Type'    => 'Client',
         'Request' => 'AddRelation',
@@ -413,7 +413,7 @@ method add_relation ($endpoint_a, $endpoint_b, $cb = undef) {
 }
 
 
-method destroy_relation ($endpoint_a, $endpoint_b, $cb = undef) {
+method destroy_relation (Str $endpoint_a, Str $endpoint_b, $cb = undef) {
     my $params = {
         'Type'    => 'Client',
         'Request' => 'DestroyRelation',
@@ -428,7 +428,7 @@ method destroy_relation ($endpoint_a, $endpoint_b, $cb = undef) {
 }
 
 
-method deploy ($charm, $service_name, $num_units = 1, $config_yaml = "", $constraints = "", $machine_spec = "", $cb = undef) {
+method deploy (Str $charm, Str $service_name, Int $num_units = 1, Str $config_yaml = "", HashRef $constraints = "", Str $machine_spec = "", $cb = undef) {
     my $params = {
         Type    => "Client",
         Request => "ServiceDeploy",
@@ -460,7 +460,7 @@ method deploy ($charm, $service_name, $num_units = 1, $config_yaml = "", $constr
 }
 
 
-method service_set ($service_name, $config = undef, $cb = undef) {
+method service_set (Str $service_name, HashRef $config = +{}, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "ServiceSet",
@@ -478,7 +478,7 @@ method service_set ($service_name, $config = undef, $cb = undef) {
 }
 
 
-method unset_config ($service_name, $config_keys, $cb = undef) {
+method unset_config (Str $service_name, HashRef $config_keys, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "ServiceUnset",
@@ -496,7 +496,7 @@ method unset_config ($service_name, $config_keys, $cb = undef) {
 }
 
 
-method set_charm ($service_name, $charm_url, $force = 0, $cb = undef) {
+method set_charm (Str $service_name, Str $charm_url, Int $force = 0, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "ServiceSetCharm",
@@ -515,7 +515,7 @@ method set_charm ($service_name, $charm_url, $force = 0, $cb = undef) {
 }
 
 
-method service_get ($service_name, $cb = undef) {
+method service_get (Str $service_name, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "ServiceGet",
@@ -530,14 +530,14 @@ method service_get ($service_name, $cb = undef) {
 }
 
 
-method get_config ($service_name, $cb = undef) {
+method get_config (Str $service_name, $cb = undef) {
     my $svc = $self->service_get($service_name);
     return $svc->{Config} unless $cb;
     return $cb->($svc->{Config});
 }
 
 
-method get_service_constraints ($service_name, $cb = undef) {
+method get_service_constraints (Str $service_name, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "GetServiceConstraints",
@@ -552,7 +552,7 @@ method get_service_constraints ($service_name, $cb = undef) {
 }
 
 
-method set_service_constraints ($service_name, $constraints, $cb = undef) {
+method set_service_constraints (Str $service_name, HashRef $constraints, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "SetServiceConstraints",
@@ -570,7 +570,7 @@ method set_service_constraints ($service_name, $constraints, $cb = undef) {
 }
 
 
-method share_environment ($users, $cb = undef) {
+method share_environment (ArrayRef $users, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "ShareEnvironment",
@@ -585,7 +585,7 @@ method share_environment ($users, $cb = undef) {
 }
 
 
-method unshare_environment ($users, $cb = undef) {
+method unshare_environment (ArrayRef $users, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "UnshareEnvironment",
@@ -601,7 +601,7 @@ method unshare_environment ($users, $cb = undef) {
 
 
 
-method service_destroy ($service_name, $cb = undef) {
+method service_destroy (Str $service_name, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "ServiceDestroy",
@@ -616,7 +616,7 @@ method service_destroy ($service_name, $cb = undef) {
 }
 
 
-method service_expose ($service_name, $cb = undef) {
+method service_expose (Str $service_name, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "ServiceExpose",
@@ -632,7 +632,7 @@ method service_expose ($service_name, $cb = undef) {
 
 
 
-method service_unexpose ($service_name, $cb = undef) {
+method service_unexpose (Str $service_name, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "ServiceUnexpose",
@@ -647,7 +647,7 @@ method service_unexpose ($service_name, $cb = undef) {
 }
 
 
-method service_charm_relations ($service_name, $cb = undef) {
+method service_charm_relations (Str $service_name, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "ServiceCharmRelations",
@@ -662,7 +662,7 @@ method service_charm_relations ($service_name, $cb = undef) {
 }
 
 
-method add_service_units ($service_name, $num_units = 1, $cb = undef) {
+method add_service_units (Str $service_name, Int $num_units = 1, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "AddServiceUnits",
@@ -680,7 +680,7 @@ method add_service_units ($service_name, $num_units = 1, $cb = undef) {
 }
 
 
-method add_service_unit ($service_name, $machine_spec = "", $cb = undef) {
+method add_service_unit (Str $service_name, Str $machine_spec = "", $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "AddServiceUnits",
@@ -702,7 +702,7 @@ method add_service_unit ($service_name, $machine_spec = "", $cb = undef) {
 }
 
 
-method destroy_service_units ($unit_names, $cb = undef) {
+method destroy_service_units (ArrayRef $unit_names, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "DestroyServiceUnits",
@@ -717,7 +717,7 @@ method destroy_service_units ($unit_names, $cb = undef) {
 }
 
 
-method resolved ($unit_name, $retry = 0, $cb = undef) {
+method resolved (Str $unit_name, Int $retry = 0, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "Resolved",
@@ -736,7 +736,7 @@ method resolved ($unit_name, $retry = 0, $cb = undef) {
 
 
 
-method run ($command, $timeout, $machines = undef, $services = undef, $units = undef, $cb = undef) {
+method run (Str $command, Int $timeout, ArrayRef $machines = +[], ArrayRef $services = +[], ArrayRef $units = +[], $cb = undef) {
     my $params = {
         Type    => "Client",
         Request => "Run",
@@ -757,7 +757,7 @@ method run ($command, $timeout, $machines = undef, $services = undef, $units = u
 }
 
 
-method run_on_all_machines ($command, $timeout, $cb = undef) {
+method run_on_all_machines (Str $command, Int $timeout, $cb = undef) {
     my $params = {
         Type    => "Client",
         Request => "RunOnAllMachines",
@@ -775,7 +775,7 @@ method run_on_all_machines ($command, $timeout, $cb = undef) {
 }
 
 
-method set_annotations ($entity, $entity_type, $annotation, $cb = undef) {
+method set_annotations (Str $entity, Str $entity_type, Str $annotation, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "SetAnnotations",
@@ -793,7 +793,7 @@ method set_annotations ($entity, $entity_type, $annotation, $cb = undef) {
 }
 
 
-method get_annotations ($entity, $entity_type, $cb = undef) {
+method get_annotations (Str $entity, Str $entity_type, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "GetAnnotations",
@@ -811,7 +811,7 @@ method get_annotations ($entity, $entity_type, $cb = undef) {
 }
 
 
-method private_address ($target, $cb = undef) {
+method private_address (Str $target, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "PrivateAddress",
@@ -826,7 +826,7 @@ method private_address ($target, $cb = undef) {
 }
 
 
-method public_address ($target, $cb = undef) {
+method public_address (Str $target, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "PublicAddress",
@@ -841,7 +841,7 @@ method public_address ($target, $cb = undef) {
 }
 
 
-method service_set_yaml ($service, $yaml, $cb = undef) {
+method service_set_yaml (Str $service, Str $yaml, $cb = undef) {
     my $params = {
         "Type"    => "Client",
         "Request" => "PublicAddress",
@@ -872,7 +872,7 @@ Juju::Environment - Exposed juju api environment
 
 =head1 VERSION
 
-version 1.9
+version 2.0
 
 =head1 SYNOPSIS
 
