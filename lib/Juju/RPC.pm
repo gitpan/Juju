@@ -1,23 +1,23 @@
 package Juju::RPC;
+BEGIN {
+  $Juju::RPC::AUTHORITY = 'cpan:ADAMJS';
+}
 # ABSTRACT: RPC Class
-$Juju::RPC::VERSION = '2.0';
+$Juju::RPC::VERSION = '2.001_1';
 
-use strict;
-use warnings;
+use Moose::Role;
 use AnyEvent;
 use AnyEvent::WebSocket::Client;
 use JSON::PP;
-use Method::Signatures;
-use Moo::Role;
+use Function::Parameters;
 
-has conn         => (is => 'rw', lazy => 1);
-has result       => (is => 'rw', lazy => 1);
-has is_connected => (is => 'rw', lazy => 1);
-has done         => (is => 'rw', lazy => 1);
-has request_id   => (is => 'rw', lazy => 1, default => 1);
+has conn         => (is => 'rw');
+has result       => (is => 'rw');
+has is_connected => (is => 'rw');
+has done         => (is => 'rw');
+has request_id   => (is => 'rw', isa => 'Int', default => 1);
 
-sub BUILD {
-    my $self = shift;
+method BUILD {
     my $client = AnyEvent::WebSocket::Client->new(ssl_no_verify => 1);
     $self->conn($client->connect($self->endpoint)->recv);
     $self->is_connected(1);
@@ -67,7 +67,7 @@ Juju::RPC - RPC Class
 
 =head1 VERSION
 
-version 2.0
+version 2.001_1
 
 =head1 DESCRIPTION
 

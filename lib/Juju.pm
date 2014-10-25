@@ -1,12 +1,13 @@
 package Juju;
-$Juju::VERSION = '2.0';
+BEGIN {
+  $Juju::AUTHORITY = 'cpan:ADAMJS';
+}
+$Juju::VERSION = '2.001_1';
 # ABSTRACT: Perl bindings for Juju
 
 
-use strict;
-use warnings;
-use Moo;
-use namespace::clean;
+use Moose;
+use namespace::autoclean;
 extends 'Juju::Environment';
 
 1;
@@ -23,7 +24,7 @@ Juju - Perl bindings for Juju
 
 =head1 VERSION
 
-version 2.0
+version 2.001_1
 
 =head1 DESCRIPTION
 

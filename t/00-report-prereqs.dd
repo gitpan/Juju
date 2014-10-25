@@ -13,16 +13,13 @@ do { my $x = {
                       'requires' => {
                                       'AnyEvent' => '0',
                                       'AnyEvent::WebSocket::Client' => '0',
+                                      'Function::Parameters' => '0',
                                       'HTTP::Tiny' => '0',
                                       'JSON::PP' => '0',
-                                      'Method::Signatures' => '0',
-                                      'Moo' => '0',
-                                      'Moo::Role' => '0',
-                                      'Types::Standard' => '0',
+                                      'Moose' => '0',
+                                      'Moose::Role' => '0',
                                       'YAML::Tiny' => '0',
-                                      'namespace::clean' => '0',
-                                      'strict' => '0',
-                                      'warnings' => '0'
+                                      'namespace::autoclean' => '0'
                                     }
                     },
        'test' => {
@@ -46,7 +43,9 @@ do { my $x = {
                                    'Test::More' => '0',
                                    'Test::NoTabs' => '0',
                                    'lib' => '0',
-                                   'perl' => '5.006'
+                                   'perl' => '5.006',
+                                   'strict' => '0',
+                                   'warnings' => '0'
                                  }
                  }
      };

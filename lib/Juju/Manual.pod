@@ -1,5 +1,5 @@
 package Juju::Manual;
-$Juju::Manual::VERSION = '2.0';
+$Juju::Manual::VERSION = '2.001_1';
 # ABSTRACT: Juju Manual
 
 
@@ -17,7 +17,7 @@ Juju::Manual - Juju Manual
 
 =head1 VERSION
 
-version 2.0
+version 2.001_1
 
 =head1 FAQ
 

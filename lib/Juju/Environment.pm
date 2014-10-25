@@ -1,34 +1,48 @@
 package Juju::Environment;
-$Juju::Environment::VERSION = '2.0';
+BEGIN {
+  $Juju::Environment::AUTHORITY = 'cpan:ADAMJS';
+}
+$Juju::Environment::VERSION = '2.001_1';
 # ABSTRACT: Exposed juju api environment
 
 
-use strict;
-use warnings;
+use Moose;
 use JSON::PP;
 use YAML::Tiny qw(Dump);
-use Method::Signatures;
+use Function::Parameters;
 use Juju::Util;
-use Types::Standard qw(ArrayRef Int Str HashRef);
-use Moo;
-use namespace::clean;
+use namespace::autoclean;
 with 'Juju::RPC';
 
 
-has password => (is => 'ro', required => 1);
-has is_authenticated => (is => 'rw', lazy => 1);
-has endpoint => (is => 'ro', default => sub {'wss://localhost:17070'});
-has username => (is => 'ro', default => sub {'user-admin'});
+has password         => (is => 'ro', isa => 'Str', required => 1);
+has is_authenticated => (is => 'rw', isa => 'Int', default  => 0);
+has endpoint         => (
+    is       => 'ro',
+    isa      => 'Str',
+    default  => 'wss://localhost:17070',
+    required => 1
+);
+has username => (is => 'ro', isa => 'Str', default => 'user-admin');
 has Jobs => (
     is      => 'ro',
-    default => sub {
-        {   HostUnits     => 'JobHostUnits',
-            ManageEnviron => 'JobManageEnviron',
-            ManageState   => 'JobManageSate'
-        };
-    }
+    isa     => 'HashRef',
+    builder => '_build_Jobs',
+    lazy    => 1
 );
-has util => (is => 'ro', default => sub { Juju::Util->new });
+
+method _build_Jobs {
+    return {
+        HostUnits     => 'JobHostUnits',
+        ManageEnviron => 'JobManageEnviron',
+        ManageState   => 'JobManageSate'
+    };
+}
+
+has util =>
+  (is => 'ro', isa => 'Juju::Util', lazy => 1, builder => '_build_util');
+
+method _build_util { Juju::Util->new };
 
 
 
@@ -844,7 +858,7 @@ method public_address (Str $target, $cb = undef) {
 method service_set_yaml (Str $service, Str $yaml, $cb = undef) {
     my $params = {
         "Type"    => "Client",
-        "Request" => "PublicAddress",
+        "Request" => "ServiceSetYAML",
         "Params"  => {
             "ServiceName" => $service,
             "Config"      => Dump($yaml)
@@ -858,6 +872,7 @@ method service_set_yaml (Str $service, Str $yaml, $cb = undef) {
     return $self->call($params, $cb);
 }
 
+__PACKAGE__->meta->make_immutable;
 1;
 
 __END__
@@ -872,7 +887,7 @@ Juju::Environment - Exposed juju api environment
 
 =head1 VERSION
 
-version 2.0
+version 2.001_1
 
 =head1 SYNOPSIS
 
