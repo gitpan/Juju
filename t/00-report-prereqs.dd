@@ -18,6 +18,7 @@ do { my $x = {
                                       'JSON::PP' => '0',
                                       'Moose' => '0',
                                       'Moose::Role' => '0',
+                                      'Throwable::Error' => '0',
                                       'YAML::Tiny' => '0',
                                       'namespace::autoclean' => '0'
                                     }

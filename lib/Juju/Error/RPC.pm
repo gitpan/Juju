@@ -1,8 +1,15 @@
-package Juju::Manual;
-$Juju::Manual::VERSION = '2.002';
-# ABSTRACT: Juju Manual
+package Juju::Error::RPC;
+BEGIN {
+  $Juju::Error::RPC::AUTHORITY = 'cpan:ADAMJS';
+}
+$Juju::Error::RPC::VERSION = '2.002';
+# ABSTRACT: RPC error exception class
+
+use Moose;
+extends 'Juju::Error';
 
 
+__PACKAGE__->meta->make_immutable;
 1;
 
 __END__
@@ -13,29 +20,11 @@ __END__
 
 =head1 NAME
 
-Juju::Manual - Juju Manual
+Juju::Error::RPC - RPC error exception class
 
 =head1 VERSION
 
 version 2.002
-
-=head1 FAQ
-
-=over 4
-
-=item *
-
-What is Juju?
-
-Juju is a powerful service orchestration tool from Ubuntu that helps you define, configure and deploy services to any cloud quickly and easily.
-
-=item *
-
-What do the bindings do?
-
-This is a client library for accessing Juju's API L<http://godoc.org/github.com/juju/juju/api#Client>
-
-=back
 
 =head1 AUTHOR
 

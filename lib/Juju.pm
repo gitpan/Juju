@@ -2,7 +2,7 @@ package Juju;
 BEGIN {
   $Juju::AUTHORITY = 'cpan:ADAMJS';
 }
-$Juju::VERSION = '2.001_1';
+$Juju::VERSION = '2.002';
 # ABSTRACT: Perl bindings for Juju
 
 
@@ -24,7 +24,7 @@ Juju - Perl bindings for Juju
 
 =head1 VERSION
 
-version 2.001_1
+version 2.002
 
 =head1 DESCRIPTION
 

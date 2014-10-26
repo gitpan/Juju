@@ -12,6 +12,9 @@ eg/deploy.pl
 eg/envinfo.pl
 lib/Juju.pm
 lib/Juju/Environment.pm
+lib/Juju/Error.pm
+lib/Juju/Error/Environment.pm
+lib/Juju/Error/RPC.pm
 lib/Juju/Manual.pod
 lib/Juju/Manual/Quickstart.pod
 lib/Juju/RPC.pm

@@ -1,8 +1,38 @@
-package Juju::Manual;
-$Juju::Manual::VERSION = '2.002';
-# ABSTRACT: Juju Manual
+package Juju::Error;
+BEGIN {
+  $Juju::Error::AUTHORITY = 'cpan:ADAMJS';
+}
+$Juju::Error::VERSION = '2.002';
+# ABSTRACT: error exception handler
 
 
+use Moose;
+extends 'Throwable::Error';
+use namespace::autoclean;
+
+has status_code => (
+    is       => 'ro',
+    isa      => 'Int',
+    required => 1,
+    default  => 127,
+    documentation =>
+      'Juju does not provide reliable return codes, keep the default until otherwise noted.'
+);
+
+has error_message => (
+    is       => 'ro',
+    isa      => 'Str',
+    required => 1
+);
+
+has method_name => (
+    is       => 'ro',
+    isa      => 'Str',
+    required => 1
+);
+
+
+__PACKAGE__->meta->make_immutable;
 1;
 
 __END__
@@ -13,29 +43,19 @@ __END__
 
 =head1 NAME
 
-Juju::Manual - Juju Manual
+Juju::Error - error exception handler
 
 =head1 VERSION
 
 version 2.002
 
-=head1 FAQ
+=head1 SYNOPSIS
 
-=over 4
-
-=item *
-
-What is Juju?
-
-Juju is a powerful service orchestration tool from Ubuntu that helps you define, configure and deploy services to any cloud quickly and easily.
-
-=item *
-
-What do the bindings do?
-
-This is a client library for accessing Juju's API L<http://godoc.org/github.com/juju/juju/api#Client>
-
-=back
+  use Juju::Error::Environment;
+  Juju::Error::Environment->throw(
+    error_message => 'Unable to query api',
+    method_name => 'deploy'
+  );
 
 =head1 AUTHOR
 

@@ -4,13 +4,16 @@ use warnings;
 
 # this test was generated with Dist::Zilla::Plugin::Test::Compile 2.046
 
-use Test::More  tests => 4 + ($ENV{AUTHOR_TESTING} ? 1 : 0);
+use Test::More  tests => 7 + ($ENV{AUTHOR_TESTING} ? 1 : 0);
 
 
 
 my @module_files = (
     'Juju.pm',
     'Juju/Environment.pm',
+    'Juju/Error.pm',
+    'Juju/Error/Environment.pm',
+    'Juju/Error/RPC.pm',
     'Juju/RPC.pm',
     'Juju/Util.pm'
 );

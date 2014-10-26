@@ -2,7 +2,7 @@ package Juju::Util;
 BEGIN {
   $Juju::Util::AUTHORITY = 'cpan:ADAMJS';
 }
-$Juju::Util::VERSION = '2.001_1';
+$Juju::Util::VERSION = '2.002';
 # ABSTRACT: helper methods for Juju
 
 
@@ -37,7 +37,7 @@ Juju::Util - helper methods for Juju
 
 =head1 VERSION
 
-version 2.001_1
+version 2.002
 
 =head1 SYNOPSIS
 

@@ -2,8 +2,9 @@ package Juju::RPC;
 BEGIN {
   $Juju::RPC::AUTHORITY = 'cpan:ADAMJS';
 }
+$Juju::RPC::VERSION = '2.002';
 # ABSTRACT: RPC Class
-$Juju::RPC::VERSION = '2.001_1';
+
 
 use Moose::Role;
 use AnyEvent;
@@ -67,7 +68,7 @@ Juju::RPC - RPC Class
 
 =head1 VERSION
 
-version 2.001_1
+version 2.002
 
 =head1 DESCRIPTION
 
